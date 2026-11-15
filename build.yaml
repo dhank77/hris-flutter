@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          # Objek bersarang (mis. List<Product>) ikut di-serialize dengan toJson().
+          explicit_to_json: true

@@ -1,0 +1,60 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import 'package:__PKG__/core/error/app_exception.dart';
+import 'package:__PKG__/features/__FEATURE__/application/__FEATURE___controller.dart';
+import 'package:__PKG__/features/__FEATURE__/data/__FEATURE___repository.dart';
+import 'package:__PKG__/features/__FEATURE__/data/models/__MODEL_SNAKE__.dart';
+
+class _MockRepository extends Mock implements __FEATURE_PASCAL__Repository {}
+
+void main() {
+  late _MockRepository repository;
+  late ProviderContainer container;
+
+  setUp(() {
+    repository = _MockRepository();
+    container = ProviderContainer.test(
+      overrides: [
+        __FEATURE_CAMEL__RepositoryProvider.overrideWithValue(repository),
+      ],
+      retry: (_, _) => null,
+    );
+  });
+
+  Future<AsyncValue<List<__MODEL__>>> load() async {
+    // Provider autoDispose butuh listener agar tidak langsung dibuang.
+    final sub = container.listen(__FEATURE_CAMEL__ControllerProvider, (_, _) {});
+    addTearDown(sub.close);
+    for (var i = 0; i < 10; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    return container.read(__FEATURE_CAMEL__ControllerProvider);
+  }
+
+  test('memuat data', () async {
+    when(
+      () => repository.fetchAll(),
+    ).thenAnswer((_) async => const [__MODEL__(id: 1, title: 'Satu')]);
+
+    final state = await load();
+
+    expect(state.requireValue.single.title, 'Satu');
+  });
+
+  test('error menjadi AsyncError', () async {
+    when(
+      () => repository.fetchAll(),
+    ).thenThrow(const NetworkException('offline'));
+
+    final state = await load();
+
+    expect(state.hasError, isTrue);
+  });
+
+  test('fromJson: field opsional hilang memakai default', () {
+    final item = __MODEL__.fromJson({'id': 1});
+    expect(item.title, '');
+  });
+}

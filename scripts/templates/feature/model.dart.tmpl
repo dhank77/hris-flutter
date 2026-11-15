@@ -1,0 +1,18 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part '__MODEL_SNAKE__.freezed.dart';
+part '__MODEL_SNAKE__.g.dart';
+
+/// TODO: sesuaikan field dengan kontrak API.
+/// Field wajib → `required`; field yang bisa hilang → nullable atau `@Default`.
+@freezed
+abstract class __MODEL__ with _$__MODEL__ {
+  const factory __MODEL__({
+    required int id,
+    @Default('') String title,
+    @Default('') String body,
+  }) = ___MODEL__;
+
+  factory __MODEL__.fromJson(Map<String, dynamic> json) =>
+      _$__MODEL__FromJson(json);
+}

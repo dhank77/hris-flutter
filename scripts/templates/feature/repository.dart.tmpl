@@ -1,0 +1,21 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:__PKG__/features/__FEATURE__/data/__FEATURE___api.dart';
+import 'package:__PKG__/features/__FEATURE__/data/models/__MODEL_SNAKE__.dart';
+
+/// Pintu masuk data __FEATURE_TITLE__ untuk layer aplikasi.
+/// Tempat menambah cache, mapping, atau sumber data lain nantinya.
+class __FEATURE_PASCAL__Repository {
+  __FEATURE_PASCAL__Repository(this._api);
+
+  final __FEATURE_PASCAL__Api _api;
+
+  Future<List<__MODEL__>> fetchAll() => _api.fetchAll();
+
+  Future<__MODEL__> fetchById(int id) => _api.fetchById(id);
+}
+
+final __FEATURE_CAMEL__RepositoryProvider =
+    Provider<__FEATURE_PASCAL__Repository>(
+      (ref) => __FEATURE_PASCAL__Repository(ref.watch(__FEATURE_CAMEL__ApiProvider)),
+    );

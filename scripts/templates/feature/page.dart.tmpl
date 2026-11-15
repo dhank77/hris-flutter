@@ -1,0 +1,52 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:__PKG__/core/widgets/async_value_view.dart';
+import 'package:__PKG__/core/widgets/state_views.dart';
+import 'package:__PKG__/features/__FEATURE__/application/__FEATURE___controller.dart';
+
+class __FEATURE_PASCAL__Page extends ConsumerWidget {
+  const __FEATURE_PASCAL__Page({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(__FEATURE_CAMEL__ControllerProvider);
+    final controller = ref.read(__FEATURE_CAMEL__ControllerProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('__FEATURE_TITLE__')),
+      body: AsyncValueView(
+        value: items,
+        onRetry: () => ref.invalidate(__FEATURE_CAMEL__ControllerProvider),
+        data: (list) => RefreshIndicator(
+          onRefresh: controller.refresh,
+          child: list.isEmpty
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 120),
+                    EmptyView(message: 'Belum ada data.'),
+                  ],
+                )
+              : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: list.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final item = list[index];
+                    return ListTile(
+                      key: ValueKey(item.id),
+                      title: Text(item.title),
+                      subtitle: Text(
+                        item.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,35 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:__PKG__/core/error/app_exception.dart';
+import 'package:__PKG__/core/network/api_guard.dart';
+import 'package:__PKG__/core/network/dio_provider.dart';
+import 'package:__PKG__/features/__FEATURE__/data/models/__MODEL_SNAKE__.dart';
+
+/// Data source HTTP untuk fitur __FEATURE_TITLE__.
+class __FEATURE_PASCAL__Api {
+  __FEATURE_PASCAL__Api(this._dio);
+
+  final Dio _dio;
+
+  /// TODO: sesuaikan endpoint & bentuk respons.
+  /// Mendukung list langsung `[...]` maupun objek `{"__JSON_KEY__": [...]}`.
+  Future<List<__MODEL__>> fetchAll() => guardApi(() async {
+    final response = await _dio.get<Object?>('__ENDPOINT__');
+    final data = response.data;
+    final list = data is List<dynamic>
+        ? data
+        : asJsonObject(data)['__JSON_KEY__'];
+    if (list is! List<dynamic>) throw const BadResponseException();
+    return [for (final item in list) __MODEL__.fromJson(asJsonObject(item))];
+  });
+
+  Future<__MODEL__> fetchById(int id) => guardApi(() async {
+    final response = await _dio.get<Object?>('__ENDPOINT__/$id');
+    return __MODEL__.fromJson(asJsonObject(response.data));
+  });
+}
+
+final __FEATURE_CAMEL__ApiProvider = Provider<__FEATURE_PASCAL__Api>(
+  (ref) => __FEATURE_PASCAL__Api(ref.watch(dioProvider)),
+);

@@ -1,0 +1,29 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:__PKG__/features/__FEATURE__/data/__FEATURE___repository.dart';
+import 'package:__PKG__/features/__FEATURE__/data/models/__MODEL_SNAKE__.dart';
+
+/// State daftar __FEATURE_TITLE__.
+///
+/// `autoDispose`: data dibuang saat halaman ditutup, dimuat ulang saat dibuka.
+/// Hapus `.autoDispose` bila data perlu di-cache selama aplikasi berjalan.
+class __FEATURE_PASCAL__Controller extends AsyncNotifier<List<__MODEL__>> {
+  @override
+  Future<List<__MODEL__>> build() =>
+      ref.watch(__FEATURE_CAMEL__RepositoryProvider).fetchAll();
+
+  /// Pull-to-refresh: data lama tetap tampil sampai data baru tiba.
+  Future<void> refresh() async {
+    final result = await AsyncValue.guard(
+      () => ref.read(__FEATURE_CAMEL__RepositoryProvider).fetchAll(),
+    );
+    if (!ref.mounted) return;
+    state = result;
+  }
+}
+
+final __FEATURE_CAMEL__ControllerProvider =
+    AsyncNotifierProvider.autoDispose<
+      __FEATURE_PASCAL__Controller,
+      List<__MODEL__>
+    >(__FEATURE_PASCAL__Controller.new);
