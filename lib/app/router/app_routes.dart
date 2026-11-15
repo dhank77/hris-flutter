@@ -3,6 +3,7 @@
 abstract final class AppRoutes {
   static const home = '/';
   static const settings = '/settings';
+  static const login = '/login';
 
   // <generator:paths> — scripts/new_feature.sh menambahkan path di atas baris ini.
 }

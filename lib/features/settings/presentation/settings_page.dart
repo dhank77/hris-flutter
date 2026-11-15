@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/theme_mode_controller.dart';
 import 'package:flutter_antigravity_starter_pack/core/config/env.dart';
+import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -12,11 +14,24 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeControllerProvider);
     final env = ref.watch(envProvider);
+    final user = ref.watch(authControllerProvider).asData?.value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pengaturan')),
       body: ListView(
         children: [
+          if (user != null) ...[
+            ListTile(
+              leading: CircleAvatar(
+                child: Text(user.fullName.characters.first.toUpperCase()),
+              ),
+              title: Text(user.fullName),
+              subtitle: Text(
+                user.email.isNotEmpty ? user.email : '@${user.username}',
+              ),
+            ),
+            const Divider(height: AppSpacing.md),
+          ],
           const ListTile(title: Text('Tema')),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -50,6 +65,18 @@ class SettingsPage extends ConsumerWidget {
             title: const Text('API'),
             subtitle: Text(env.apiBaseUrl),
           ),
+          if (user != null) ...[
+            const Divider(height: AppSpacing.xl),
+            ListTile(
+              key: const Key('settings.logout'),
+              leading: Icon(Icons.logout, color: context.colors.error),
+              title: Text(
+                'Keluar',
+                style: TextStyle(color: context.colors.error),
+              ),
+              onTap: () => ref.read(authControllerProvider.notifier).logout(),
+            ),
+          ],
         ],
       ),
     );

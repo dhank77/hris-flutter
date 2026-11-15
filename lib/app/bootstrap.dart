@@ -4,8 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/logging/app_logger.dart';
 import 'package:flutter_antigravity_starter_pack/core/logging/provider_logger.dart';
+import 'package:flutter_antigravity_starter_pack/core/network/token_refresher.dart';
 import 'package:flutter_antigravity_starter_pack/core/riverpod/retry_policy.dart';
 import 'package:flutter_antigravity_starter_pack/core/storage/preferences.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_api.dart';
 
 /// Titik awal aplikasi. Semua inisialisasi yang harus selesai SEBELUM UI
 /// pertama digambar dikumpulkan di sini, sehingga `main.dart` tetap satu baris.
@@ -41,6 +43,7 @@ Future<void> bootstrap(Widget Function() builder) async {
       overrides: [
         loggerProvider.overrideWithValue(logger),
         sharedPreferencesProvider.overrideWithValue(preferences),
+        tokenRefresherProvider.overrideWithValue(refreshAuthTokens),
       ],
       child: builder(),
     ),
