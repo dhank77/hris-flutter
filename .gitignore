@@ -51,3 +51,4 @@ config/prod.json
 
 # Berkas kerja lokal
 Claude outputs/
+android/build/reports/problems/problems-report.html
