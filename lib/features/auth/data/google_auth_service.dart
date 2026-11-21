@@ -66,8 +66,15 @@ class PluginGoogleAuthService implements GoogleAuthService {
       throw _mapGoogleException(error);
     } on AppException {
       rethrow;
-    } catch (_) {
-      throw const UnknownException('Gagal masuk dengan Google.');
+    } catch (error) {
+      final detail = error.toString();
+      if (detail.contains('MissingPluginException') ||
+          detail.contains('channel-error')) {
+        throw const UnknownException(
+          'Plugin Google Sign-In belum termuat di aplikasi. Silakan Hentikan (Stop) aplikasi lalu jalankan ulang (Full Rebuild / Run).',
+        );
+      }
+      throw UnknownException('Gagal masuk dengan Google: $error');
     }
   }
 
