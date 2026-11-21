@@ -1,4 +1,6 @@
 {
   "API_BASE_URL": "http://127.0.0.1:8000/api",
-  "ENABLE_HTTP_LOGS": true
+  "ENABLE_HTTP_LOGS": true,
+  "GOOGLE_CLIENT_ID": "606874341263-g023t9jdgigb9abmr8v3n85u19tss46p.apps.googleusercontent.com",
+  "GOOGLE_SERVER_CLIENT_ID": ""
 }

@@ -110,4 +110,43 @@ void main() {
       () => repository.login(email: 'budi@example.com', password: 'secret'),
     ).called(1);
   });
+
+  testWidgets(
+    'memanggil repository.loginWithGoogle saat tombol Google ditekan',
+    (tester) async {
+      when(() => repository.loginWithGoogle()).thenAnswer(
+        (_) async => const AuthUser(
+          id: 2,
+          name: 'Budi Google',
+          email: 'budi.google@example.com',
+        ),
+      );
+
+      await pumpLoginPage(tester);
+
+      await tester.tap(find.byKey(const Key('login.google')));
+      await tester.pumpAndSettle();
+
+      verify(() => repository.loginWithGoogle()).called(1);
+    },
+  );
+
+  testWidgets('memanggil repository.loginWithGoogle saat tombol Google ditekan', (
+    tester,
+  ) async {
+    when(() => repository.loginWithGoogle()).thenAnswer(
+      (_) async => const AuthUser(
+        id: 2,
+        name: 'Budi Google',
+        email: 'budi.google@example.com',
+      ),
+    );
+
+    await pumpLoginPage(tester);
+
+    await tester.tap(find.byKey(const Key('login.google')));
+    await tester.pumpAndSettle();
+
+    verify(() => repository.loginWithGoogle()).called(1);
+  });
 }

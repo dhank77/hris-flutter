@@ -120,5 +120,49 @@ void main() {
       expect(ok, isFalse);
       expect(container.read(loginControllerProvider).hasError, isTrue);
     });
+
+    test('submitGoogle memperbarui AuthController saat berhasil', () async {
+      when(() => repository.restoreSession()).thenAnswer((_) async => null);
+      when(
+        () => repository.loginWithGoogle(),
+      ).thenAnswer((_) async => sampleUser);
+
+      final authSub = container.listen(authControllerProvider, (_, _) {});
+      final loginSub = container.listen(loginControllerProvider, (_, _) {});
+      addTearDown(authSub.close);
+      addTearDown(loginSub.close);
+      await settle();
+
+      final ok = await container
+          .read(loginControllerProvider.notifier)
+          .submitGoogle();
+
+      expect(ok, isTrue);
+      expect(container.read(loginControllerProvider).hasError, isFalse);
+      expect(container.read(authControllerProvider).requireValue, sampleUser);
+    });
+
+    test(
+      'submitGoogle mereset state tanpa error saat dibatalkan pengguna',
+      () async {
+        when(() => repository.restoreSession()).thenAnswer((_) async => null);
+        when(
+          () => repository.loginWithGoogle(),
+        ).thenThrow(const CancelledException('Login Google dibatalkan.'));
+
+        final authSub = container.listen(authControllerProvider, (_, _) {});
+        final loginSub = container.listen(loginControllerProvider, (_, _) {});
+        addTearDown(authSub.close);
+        addTearDown(loginSub.close);
+        await settle();
+
+        final ok = await container
+            .read(loginControllerProvider.notifier)
+            .submitGoogle();
+
+        expect(ok, isFalse);
+        expect(container.read(loginControllerProvider).hasError, isFalse);
+      },
+    );
   });
 }

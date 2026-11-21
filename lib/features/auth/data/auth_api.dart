@@ -37,6 +37,32 @@ class AuthApi {
     return (user: AuthUser.fromJson(userJson), accessToken: accessToken);
   });
 
+  Future<LoginResponse> loginWithGoogle({
+    String? idToken,
+    String? accessToken,
+    String deviceName = 'flutter-hris',
+  }) => guardApi(() async {
+    final response = await _dio.post<Object?>(
+      '/auth/google',
+      data: {
+        if (idToken != null && idToken.isNotEmpty) 'id_token': idToken,
+        if (accessToken != null && accessToken.isNotEmpty)
+          'access_token': accessToken,
+        'device_name': deviceName,
+      },
+      options: Options(extra: const {skipAuthKey: true}),
+    );
+    final json = asJsonObject(response.data);
+    final sanctumToken = json['access_token'];
+    final userJson = json['user'];
+    if (sanctumToken is! String ||
+        sanctumToken.isEmpty ||
+        userJson is! Map<String, dynamic>) {
+      throw const BadResponseException();
+    }
+    return (user: AuthUser.fromJson(userJson), accessToken: sanctumToken);
+  });
+
   Future<AuthUser> fetchMe() => guardApi(() async {
     final response = await _dio.get<Object?>('/auth/me');
     final json = asJsonObject(response.data);

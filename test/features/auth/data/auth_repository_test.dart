@@ -5,9 +5,29 @@ import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/core/network/auth_interceptor.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_api.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/data/google_auth_service.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 
 import '../../../helpers/fakes.dart';
+
+class _FakeGoogleAuthService implements GoogleAuthService {
+  _FakeGoogleAuthService({this.tokens, this.error});
+
+  final GoogleAuthTokens? tokens;
+  final Object? error;
+  bool signedOut = false;
+
+  @override
+  Future<GoogleAuthTokens> signIn() async {
+    if (error != null) throw error!;
+    return tokens ?? (idToken: 'fake-google-id-token', accessToken: null);
+  }
+
+  @override
+  Future<void> signOut() async {
+    signedOut = true;
+  }
+}
 
 void main() {
   Dio createDio(FakeHttpAdapter adapter) =>
@@ -175,6 +195,67 @@ void main() {
         expect(adapter.requests, hasLength(1));
         expect(storage.accessToken, isNull);
         expect(storage.refreshToken, isNull);
+      },
+    );
+
+    test(
+      'loginWithGoogle mengirim id_token ke /auth/google dan menyimpan token Sanctum',
+      () async {
+        final storage = InMemoryTokenStorage();
+        final googleService = _FakeGoogleAuthService(
+          tokens: (idToken: 'google-id-jwt-123', accessToken: null),
+        );
+        final adapter = FakeHttpAdapter((options) {
+          expect(options.path, '/auth/google');
+          expect(options.extra[skipAuthKey], isTrue);
+          expect(options.data, {
+            'id_token': 'google-id-jwt-123',
+            'device_name': 'flutter-hris',
+          });
+          return const FakeResponse(200, {
+            'access_token': '2|sanctum-google-token',
+            'token_type': 'Bearer',
+            'user': {
+              'id': 2,
+              'name': 'Budi Google',
+              'email': 'budi.google@example.com',
+              'role': 'employee',
+            },
+          });
+        });
+        final repo = AuthRepository(
+          AuthApi(createDio(adapter)),
+          storage,
+          googleService,
+        );
+
+        final user = await repo.loginWithGoogle();
+
+        expect(user.email, 'budi.google@example.com');
+        expect(storage.accessToken, '2|sanctum-google-token');
+      },
+    );
+
+    test(
+      'loginWithGoogle meneruskan CancelledException tanpa memanggil API',
+      () async {
+        final storage = InMemoryTokenStorage();
+        final googleService = _FakeGoogleAuthService(
+          error: const CancelledException('Login Google dibatalkan.'),
+        );
+        final adapter = FakeHttpAdapter((_) => const FakeResponse(200, {}));
+        final repo = AuthRepository(
+          AuthApi(createDio(adapter)),
+          storage,
+          googleService,
+        );
+
+        await expectLater(
+          repo.loginWithGoogle,
+          throwsA(isA<CancelledException>()),
+        );
+        expect(adapter.requests, isEmpty);
+        expect(storage.accessToken, isNull);
       },
     );
   });

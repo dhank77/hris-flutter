@@ -36,6 +36,12 @@ class AuthController extends AsyncNotifier<AuthUser?> {
     state = AsyncData(user);
   }
 
+  Future<void> loginWithGoogle() async {
+    final user = await ref.read(authRepositoryProvider).loginWithGoogle();
+    if (!ref.mounted) return;
+    state = AsyncData(user);
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     if (!ref.mounted) return;

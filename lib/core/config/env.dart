@@ -8,7 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Jangan menaruh secret di sini: semua nilai dart-define ikut ter-bundle
 /// ke dalam aplikasi dan bisa dibaca orang lain.
 class Env {
-  const Env({required this.apiBaseUrl, required this.enableHttpLogs});
+  const Env({
+    required this.apiBaseUrl,
+    required this.enableHttpLogs,
+    this.googleClientId = '',
+    this.googleServerClientId = '',
+  });
 
   factory Env.fromEnvironment() {
     const defaultUrl = 'http://127.0.0.1:8000/api';
@@ -29,11 +34,17 @@ class Env {
         'ENABLE_HTTP_LOGS',
         defaultValue: kDebugMode,
       ),
+      googleClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
+      googleServerClientId: const String.fromEnvironment(
+        'GOOGLE_SERVER_CLIENT_ID',
+      ),
     );
   }
 
   final String apiBaseUrl;
   final bool enableHttpLogs;
+  final String googleClientId;
+  final String googleServerClientId;
 }
 
 final envProvider = Provider<Env>((ref) => Env.fromEnvironment());

@@ -37,6 +37,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
   }
 
+  Future<void> _submitGoogle() async {
+    FocusScope.of(context).unfocus();
+    await ref.read(loginControllerProvider.notifier).submitGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<void>>(loginControllerProvider, (previous, next) {
@@ -162,6 +167,37 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             )
                           : const Text('Masuk'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Text(
+                            'atau',
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    OutlinedButton.icon(
+                      key: const Key('login.google'),
+                      onPressed: isLoading ? null : _submitGoogle,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                      ),
+                      icon: const Icon(Icons.g_mobiledata, size: 28),
+                      label: const Text('Masuk dengan Google'),
                     ),
                   ],
                 ),

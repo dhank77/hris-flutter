@@ -3,15 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/core/storage/token_storage.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_api.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/data/google_auth_service.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 
 /// Pintu masuk data Auth untuk layer aplikasi.
 /// Mengkoordinasikan API autentikasi Laravel Sanctum dan penyimpanan token terenkripsi.
 class AuthRepository {
-  AuthRepository(this._api, this._tokenStorage);
+  AuthRepository(this._api, this._tokenStorage, [this._googleAuthService]);
 
   final AuthApi _api;
   final TokenStorage _tokenStorage;
+  final GoogleAuthService? _googleAuthService;
 
   /// Memulihkan sesi dari token tersimpan. Mengembalikan `null` bila belum
   /// login atau token sudah tidak valid.
@@ -38,6 +40,23 @@ class AuthRepository {
     return result.user;
   }
 
+  Future<AuthUser> loginWithGoogle() async {
+    final googleService = _googleAuthService;
+    if (googleService == null) {
+      throw const UnknownException('Layanan Google Sign-In tidak tersedia.');
+    }
+    final tokens = await googleService.signIn();
+    final result = await _api.loginWithGoogle(
+      idToken: tokens.idToken,
+      accessToken: tokens.accessToken,
+    );
+    await _tokenStorage.saveTokens(
+      accessToken: result.accessToken,
+      refreshToken: '',
+    );
+    return result.user;
+  }
+
   Future<void> logout() async {
     final token = await _tokenStorage.readAccessToken();
     if (token != null && token.isNotEmpty) {
@@ -47,6 +66,7 @@ class AuthRepository {
         // Tetap hapus token lokal meskipun pencabutan token di server gagal.
       }
     }
+    await _googleAuthService?.signOut();
     await _tokenStorage.clear();
   }
 }
@@ -55,5 +75,6 @@ final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(
     ref.watch(authApiProvider),
     ref.watch(tokenStorageProvider),
+    ref.watch(googleAuthServiceProvider),
   ),
 );
