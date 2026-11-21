@@ -10,16 +10,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class Env {
   const Env({required this.apiBaseUrl, required this.enableHttpLogs});
 
-  factory Env.fromEnvironment() => const Env(
-    apiBaseUrl: String.fromEnvironment(
+  factory Env.fromEnvironment() {
+    const rawUrl = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://hris.test/api',
-    ),
-    enableHttpLogs: bool.fromEnvironment(
-      'ENABLE_HTTP_LOGS',
-      defaultValue: kDebugMode,
-    ),
-  );
+      defaultValue: 'http://127.0.0.1:8000/api',
+    );
+    final apiBaseUrl = (rawUrl.isEmpty || rawUrl.contains('dummyjson.com'))
+        ? 'http://127.0.0.1:8000/api'
+        : rawUrl;
+
+    return Env(
+      apiBaseUrl: apiBaseUrl,
+      enableHttpLogs: const bool.fromEnvironment(
+        'ENABLE_HTTP_LOGS',
+        defaultValue: kDebugMode,
+      ),
+    );
+  }
 
   final String apiBaseUrl;
   final bool enableHttpLogs;
