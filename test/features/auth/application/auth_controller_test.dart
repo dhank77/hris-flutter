@@ -26,7 +26,10 @@ void main() {
   setUp(() {
     repository = _MockRepository();
     container = ProviderContainer.test(
-      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        splashDelayProvider.overrideWithValue(Duration.zero),
+      ],
       retry: (_, _) => null,
     );
   });

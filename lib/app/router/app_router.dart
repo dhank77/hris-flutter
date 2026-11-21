@@ -8,6 +8,7 @@ import 'package:flutter_antigravity_starter_pack/app/router/route_guards.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/state_views.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/presentation/login_page.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/presentation/splash_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/home/presentation/home_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/settings/presentation/settings_page.dart';
 
@@ -21,7 +22,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   });
 
   final router = GoRouter(
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.splash,
     debugLogDiagnostics: kDebugMode,
     refreshListenable: authListenable,
     redirect: (context, state) => resolveAuthRedirect(
@@ -30,6 +31,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       from: state.uri.queryParameters['from'],
     ),
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashPage(),
+      ),
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomePage(),

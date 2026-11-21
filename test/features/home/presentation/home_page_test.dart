@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 import 'package:flutter_antigravity_starter_pack/features/home/presentation/home_page.dart';
@@ -22,7 +23,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          splashDelayProvider.overrideWithValue(Duration.zero),
+        ],
         child: const MaterialApp(home: HomePage()),
       ),
     );

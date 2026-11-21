@@ -23,4 +23,7 @@ abstract final class AppDurations {
 
   /// Jeda debounce untuk input pencarian.
   static const debounce = Duration(milliseconds: 400);
+
+  /// Durasi minimum tampilnya halaman splash saat memeriksa sesi.
+  static const splash = Duration(seconds: 2);
 }

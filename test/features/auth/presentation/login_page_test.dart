@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
+import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/presentation/login_page.dart';
@@ -21,7 +22,10 @@ void main() {
   Future<void> pumpLoginPage(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          splashDelayProvider.overrideWithValue(Duration.zero),
+        ],
         child: const MaterialApp(home: LoginPage()),
       ),
     );

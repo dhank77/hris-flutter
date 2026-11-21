@@ -12,13 +12,81 @@ void main() {
     email: 'emily@example.com',
   );
 
-  test('tidak redirect saat auth masih loading', () {
+  test('mengarahkan ke /splash saat auth masih loading di /', () {
     expect(
       resolveAuthRedirect(
         authState: const AsyncLoading(),
         location: AppRoutes.home,
       ),
+      AppRoutes.splash,
+    );
+  });
+
+  test(
+    'menyimpan parameter from ke /splash saat auth masih loading di /settings',
+    () {
+      expect(
+        resolveAuthRedirect(
+          authState: const AsyncLoading(),
+          location: AppRoutes.settings,
+        ),
+        '/splash?from=%2Fsettings',
+      );
+    },
+  );
+
+  test('tetap di /splash saat auth masih loading di /splash', () {
+    expect(
+      resolveAuthRedirect(
+        authState: const AsyncLoading(),
+        location: AppRoutes.splash,
+      ),
       isNull,
+    );
+  });
+
+  test('belum login di /splash diarahkan ke /login', () {
+    expect(
+      resolveAuthRedirect(
+        authState: const AsyncData(null),
+        location: AppRoutes.splash,
+      ),
+      AppRoutes.login,
+    );
+  });
+
+  test(
+    'belum login di /splash dengan from meneruskan parameter from ke /login',
+    () {
+      expect(
+        resolveAuthRedirect(
+          authState: const AsyncData(null),
+          location: AppRoutes.splash,
+          from: AppRoutes.settings,
+        ),
+        '/login?from=%2Fsettings',
+      );
+    },
+  );
+
+  test('sudah login di /splash diarahkan ke /', () {
+    expect(
+      resolveAuthRedirect(
+        authState: const AsyncData(user),
+        location: AppRoutes.splash,
+      ),
+      AppRoutes.home,
+    );
+  });
+
+  test('sudah login di /splash dengan from diarahkan ke from', () {
+    expect(
+      resolveAuthRedirect(
+        authState: const AsyncData(user),
+        location: AppRoutes.splash,
+        from: AppRoutes.settings,
+      ),
+      AppRoutes.settings,
     );
   });
 

@@ -36,8 +36,47 @@ void main() {
         child: const App(),
       ),
     );
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'menampilkan splash screen selama 2 detik saat cek sesi lalu langsung ke login (tanpa sempat menampilkan Beranda)',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await SharedPreferences.getInstance();
+      final authRepository = _MockAuthRepository();
+      when(() => authRepository.restoreSession()).thenAnswer((_) async => null);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(preferences),
+            authRepositoryProvider.overrideWithValue(authRepository),
+          ],
+          child: const App(),
+        ),
+      );
+      await tester.pump();
+
+      // Saat baru dibuka (0 detik), Splash tampil dan Beranda tidak pernah muncul.
+      expect(find.byKey(const Key('splash.loading')), findsOneWidget);
+      expect(find.text('Beranda'), findsNothing);
+      expect(find.byKey(const Key('login.submit')), findsNothing);
+
+      // Setelah 1 detik (belum 2 detik), masih di Splash screen.
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byKey(const Key('splash.loading')), findsOneWidget);
+      expect(find.byKey(const Key('login.submit')), findsNothing);
+
+      // Setelah total 2 detik berlalu, selesai loading -> langsung ke Login.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('login.submit')), findsOneWidget);
+      expect(find.text('Beranda'), findsNothing);
+    },
+  );
 
   testWidgets('pengguna belum login diarahkan ke halaman Masuk', (
     tester,
