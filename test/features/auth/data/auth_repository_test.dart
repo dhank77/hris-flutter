@@ -11,30 +11,39 @@ import '../../../helpers/fakes.dart';
 
 void main() {
   Dio createDio(FakeHttpAdapter adapter) =>
-      Dio(BaseOptions(baseUrl: 'https://example.test'))
+      Dio(BaseOptions(baseUrl: 'https://hris.test/api'))
         ..httpClientAdapter = adapter;
 
   group('AuthUser.fromJson', () {
-    test('mem-parse payload lengkap', () {
+    test('mem-parse payload lengkap dari Laravel Sanctum', () {
       final user = AuthUser.fromJson({
         'id': 1,
-        'username': 'emilys',
-        'email': 'emily@example.com',
-        'firstName': 'Emily',
-        'lastName': 'Johnson',
-        'image': 'https://example.test/avatar.png',
+        'name': 'Budi Santoso',
+        'email': 'budi@example.com',
+        'avatar': 'avatars/budi.png',
+        'role': 'employee',
+        'department': 'Engineering',
+        'position': 'Software Engineer',
       });
 
       expect(user.id, 1);
-      expect(user.username, 'emilys');
-      expect(user.fullName, 'Emily Johnson');
+      expect(user.name, 'Budi Santoso');
+      expect(user.email, 'budi@example.com');
+      expect(user.department, 'Engineering');
+      expect(user.position, 'Software Engineer');
+      expect(user.fullName, 'Budi Santoso');
     });
 
     test('field opsional hilang memakai default', () {
-      final user = AuthUser.fromJson({'id': 1, 'username': 'emilys'});
+      final user = AuthUser.fromJson({
+        'id': 1,
+        'name': 'Budi Santoso',
+        'email': 'budi@example.com',
+      });
 
-      expect(user.email, '');
-      expect(user.fullName, 'emilys');
+      expect(user.role, 'employee');
+      expect(user.department, isNull);
+      expect(user.position, isNull);
     });
 
     test('field wajib hilang melempar TypeError', () {
@@ -43,38 +52,52 @@ void main() {
   });
 
   group('AuthRepository', () {
-    test('login menyimpan token dan mengembalikan user', () async {
-      final storage = InMemoryTokenStorage();
-      final adapter = FakeHttpAdapter((options) {
-        expect(options.path, '/auth/login');
-        expect(options.extra[skipAuthKey], isTrue);
-        return const FakeResponse(200, {
-          'id': 1,
-          'username': 'emilys',
-          'firstName': 'Emily',
-          'lastName': 'Johnson',
-          'accessToken': 'access-123',
-          'refreshToken': 'refresh-456',
+    test(
+      'login menyimpan access_token Sanctum dan mengembalikan user',
+      () async {
+        final storage = InMemoryTokenStorage();
+        final adapter = FakeHttpAdapter((options) {
+          expect(options.path, '/auth/login');
+          expect(options.extra[skipAuthKey], isTrue);
+          return const FakeResponse(200, {
+            'access_token': '1|sanctum-token-123',
+            'token_type': 'Bearer',
+            'user': {
+              'id': 1,
+              'name': 'Budi Santoso',
+              'email': 'budi@example.com',
+              'role': 'employee',
+            },
+          });
         });
-      });
-      final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
+        final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
 
-      final user = await repo.login(username: 'emilys', password: 'secret');
+        final user = await repo.login(
+          email: 'budi@example.com',
+          password: 'secret',
+        );
 
-      expect(user.username, 'emilys');
-      expect(storage.accessToken, 'access-123');
-      expect(storage.refreshToken, 'refresh-456');
-    });
+        expect(user.email, 'budi@example.com');
+        expect(user.fullName, 'Budi Santoso');
+        expect(storage.accessToken, '1|sanctum-token-123');
+      },
+    );
 
     test('login melempar BadResponseException jika token hilang', () async {
       final storage = InMemoryTokenStorage();
       final adapter = FakeHttpAdapter(
-        (_) => const FakeResponse(200, {'id': 1, 'username': 'emilys'}),
+        (_) => const FakeResponse(200, {
+          'user': {
+            'id': 1,
+            'name': 'Budi Santoso',
+            'email': 'budi@example.com',
+          },
+        }),
       );
       final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
 
       await expectLater(
-        () => repo.login(username: 'emilys', password: 'secret'),
+        () => repo.login(email: 'budi@example.com', password: 'secret'),
         throwsA(isA<BadResponseException>()),
       );
       expect(storage.accessToken, isNull);
@@ -93,18 +116,25 @@ void main() {
 
     test('restoreSession memuat /auth/me bila token ada', () async {
       final storage = InMemoryTokenStorage(
-        accessToken: 'access-123',
-        refreshToken: 'refresh-456',
+        accessToken: '1|sanctum-token-123',
+        refreshToken: '',
       );
       final adapter = FakeHttpAdapter((options) {
         expect(options.path, '/auth/me');
-        return const FakeResponse(200, {'id': 1, 'username': 'emilys'});
+        return const FakeResponse(200, {
+          'user': {
+            'id': 1,
+            'name': 'Budi Santoso',
+            'email': 'budi@example.com',
+          },
+        });
       });
       final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
 
       final user = await repo.restoreSession();
 
-      expect(user?.username, 'emilys');
+      expect(user?.email, 'budi@example.com');
+      expect(user?.fullName, 'Budi Santoso');
     });
 
     test(
@@ -112,10 +142,10 @@ void main() {
       () async {
         final storage = InMemoryTokenStorage(
           accessToken: 'expired',
-          refreshToken: 'refresh',
+          refreshToken: '',
         );
         final adapter = FakeHttpAdapter(
-          (_) => const FakeResponse(401, {'message': 'Invalid token'}),
+          (_) => const FakeResponse(401, {'message': 'Unauthenticated.'}),
         );
         final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
 
@@ -127,45 +157,25 @@ void main() {
       },
     );
 
-    test('logout menghapus token tersimpan', () async {
-      final storage = InMemoryTokenStorage(
-        accessToken: 'access-123',
-        refreshToken: 'refresh-456',
-      );
-      final repo = AuthRepository(
-        AuthApi(createDio(FakeHttpAdapter((_) => const FakeResponse(200)))),
-        storage,
-      );
-
-      await repo.logout();
-
-      expect(storage.accessToken, isNull);
-      expect(storage.refreshToken, isNull);
-    });
-  });
-
-  group('refreshAuthTokens', () {
-    test('mengembalikan pasangan token baru saat berhasil', () async {
-      final adapter = FakeHttpAdapter((options) {
-        expect(options.path, '/auth/refresh');
-        return const FakeResponse(200, {
-          'accessToken': 'new-access',
-          'refreshToken': 'new-refresh',
+    test(
+      'logout memanggil /auth/logout dan menghapus token tersimpan',
+      () async {
+        final storage = InMemoryTokenStorage(
+          accessToken: '1|sanctum-token-123',
+          refreshToken: '',
+        );
+        final adapter = FakeHttpAdapter((options) {
+          expect(options.path, '/auth/logout');
+          return const FakeResponse(200, {'message': 'Berhasil keluar.'});
         });
-      });
+        final repo = AuthRepository(AuthApi(createDio(adapter)), storage);
 
-      final pair = await refreshAuthTokens(createDio(adapter), 'old-refresh');
+        await repo.logout();
 
-      expect(pair?.accessToken, 'new-access');
-      expect(pair?.refreshToken, 'new-refresh');
-    });
-
-    test('mengembalikan null jika respons tidak punya accessToken', () async {
-      final adapter = FakeHttpAdapter((_) => const FakeResponse(200, {}));
-
-      final pair = await refreshAuthTokens(createDio(adapter), 'old-refresh');
-
-      expect(pair, isNull);
-    });
+        expect(adapter.requests, hasLength(1));
+        expect(storage.accessToken, isNull);
+        expect(storage.refreshToken, isNull);
+      },
+    );
   });
 }

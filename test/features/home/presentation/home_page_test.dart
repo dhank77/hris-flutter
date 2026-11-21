@@ -12,10 +12,8 @@ class _MockAuthRepository extends Mock implements AuthRepository {}
 void main() {
   const sampleUser = AuthUser(
     id: 1,
-    username: 'emilys',
+    name: 'Emily Johnson',
     email: 'emily@example.com',
-    firstName: 'Emily',
-    lastName: 'Johnson',
   );
 
   Future<void> pumpHomePage(WidgetTester tester, {AuthUser? user}) async {

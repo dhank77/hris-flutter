@@ -6,7 +6,11 @@ import 'package:flutter_antigravity_starter_pack/app/router/route_guards.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 
 void main() {
-  const user = AuthUser(id: 1, username: 'emilys');
+  const user = AuthUser(
+    id: 1,
+    name: 'Emily Johnson',
+    email: 'emily@example.com',
+  );
 
   test('tidak redirect saat auth masih loading', () {
     expect(

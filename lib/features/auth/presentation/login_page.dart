@@ -15,13 +15,13 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -32,7 +32,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref
         .read(loginControllerProvider.notifier)
         .submit(
-          username: _usernameController.text.trim(),
+          email: _emailController.text.trim(),
           password: _passwordController.text,
         );
   }
@@ -73,7 +73,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Silakan masuk menggunakan akun Anda.',
+                      'Silakan masuk menggunakan akun HRIS Anda.',
                       textAlign: TextAlign.center,
                       style: context.textTheme.bodyMedium?.copyWith(
                         color: context.colors.onSurfaceVariant,
@@ -81,21 +81,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     TextFormField(
-                      key: const Key('login.username'),
-                      controller: _usernameController,
+                      key: const Key('login.email'),
+                      controller: _emailController,
                       enabled: !isLoading,
+                      keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.username],
+                      autofillHints: const [AutofillHints.email],
                       decoration: InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: const Icon(Icons.person_outline),
+                        labelText: 'Email',
+                        prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Username wajib diisi.';
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) {
+                          return 'Email wajib diisi.';
+                        }
+                        if (!trimmed.contains('@')) {
+                          return 'Format email tidak valid.';
                         }
                         return null;
                       },

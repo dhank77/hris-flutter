@@ -26,9 +26,7 @@ class SettingsPage extends ConsumerWidget {
                 child: Text(user.fullName.characters.first.toUpperCase()),
               ),
               title: Text(user.fullName),
-              subtitle: Text(
-                user.email.isNotEmpty ? user.email : '@${user.username}',
-              ),
+              subtitle: Text(user.email),
             ),
             const Divider(height: AppSpacing.md),
           ],

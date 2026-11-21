@@ -17,13 +17,10 @@ class AuthController extends AsyncNotifier<AuthUser?> {
     return ref.watch(authRepositoryProvider).restoreSession();
   }
 
-  Future<void> login({
-    required String username,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     final user = await ref
         .read(authRepositoryProvider)
-        .login(username: username, password: password);
+        .login(email: email, password: password);
     if (!ref.mounted) return;
     state = AsyncData(user);
   }

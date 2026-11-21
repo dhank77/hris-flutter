@@ -16,9 +16,8 @@ class _MockRepository extends Mock implements AuthRepository {}
 void main() {
   const sampleUser = AuthUser(
     id: 1,
-    username: 'emilys',
-    firstName: 'Emily',
-    lastName: 'Johnson',
+    name: 'Budi Santoso',
+    email: 'budi@example.com',
   );
 
   late _MockRepository repository;
@@ -45,7 +44,7 @@ void main() {
   test('login dan logout memperbarui state AuthController', () async {
     when(() => repository.restoreSession()).thenAnswer((_) async => null);
     when(
-      () => repository.login(username: 'emilys', password: 'secret'),
+      () => repository.login(email: 'budi@example.com', password: 'secret'),
     ).thenAnswer((_) async => sampleUser);
     when(() => repository.logout()).thenAnswer((_) async {});
 
@@ -57,7 +56,7 @@ void main() {
 
     await container
         .read(authControllerProvider.notifier)
-        .login(username: 'emilys', password: 'secret');
+        .login(email: 'budi@example.com', password: 'secret');
     expect(container.read(authControllerProvider).requireValue, sampleUser);
 
     await container.read(authControllerProvider.notifier).logout();
@@ -81,7 +80,7 @@ void main() {
     test('submit mengembalikan true saat berhasil', () async {
       when(() => repository.restoreSession()).thenAnswer((_) async => null);
       when(
-        () => repository.login(username: 'emilys', password: 'secret'),
+        () => repository.login(email: 'budi@example.com', password: 'secret'),
       ).thenAnswer((_) async => sampleUser);
 
       final authSub = container.listen(authControllerProvider, (_, _) {});
@@ -92,7 +91,7 @@ void main() {
 
       final ok = await container
           .read(loginControllerProvider.notifier)
-          .submit(username: 'emilys', password: 'secret');
+          .submit(email: 'budi@example.com', password: 'secret');
 
       expect(ok, isTrue);
       expect(container.read(loginControllerProvider).hasError, isFalse);
@@ -102,8 +101,8 @@ void main() {
     test('submit mengembalikan false dan AsyncError saat gagal', () async {
       when(() => repository.restoreSession()).thenAnswer((_) async => null);
       when(
-        () => repository.login(username: 'emilys', password: 'wrong'),
-      ).thenThrow(const UnauthorizedException('Username atau password salah.'));
+        () => repository.login(email: 'budi@example.com', password: 'wrong'),
+      ).thenThrow(const UnauthorizedException('Email atau password salah.'));
 
       final authSub = container.listen(authControllerProvider, (_, _) {});
       final loginSub = container.listen(loginControllerProvider, (_, _) {});
@@ -113,7 +112,7 @@ void main() {
 
       final ok = await container
           .read(loginControllerProvider.notifier)
-          .submit(username: 'emilys', password: 'wrong');
+          .submit(email: 'budi@example.com', password: 'wrong');
 
       expect(ok, isFalse);
       expect(container.read(loginControllerProvider).hasError, isTrue);

@@ -58,7 +58,7 @@ class _WelcomeBanner extends StatelessWidget {
     final displayName = user?.fullName ?? 'Karyawan';
     final subtitle = (user?.email.isNotEmpty ?? false)
         ? user!.email
-        : (user != null ? '@${user!.username}' : 'Selamat bekerja hari ini');
+        : 'Selamat bekerja hari ini';
     final initial = displayName.isNotEmpty
         ? displayName.characters.first.toUpperCase()
         : 'K';

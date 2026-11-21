@@ -34,11 +34,30 @@ void main() {
     await tester.tap(find.byKey(const Key('login.submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Username wajib diisi.'), findsOneWidget);
+    expect(find.text('Email wajib diisi.'), findsOneWidget);
     expect(find.text('Password wajib diisi.'), findsOneWidget);
     verifyNever(
       () => repository.login(
-        username: any(named: 'username'),
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    );
+  });
+
+  testWidgets('menampilkan validasi jika format email tidak valid', (
+    tester,
+  ) async {
+    await pumpLoginPage(tester);
+
+    await tester.enterText(find.byKey(const Key('login.email')), 'bukan-email');
+    await tester.enterText(find.byKey(const Key('login.password')), 'secret');
+    await tester.tap(find.byKey(const Key('login.submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Format email tidak valid.'), findsOneWidget);
+    verifyNever(
+      () => repository.login(
+        email: any(named: 'email'),
         password: any(named: 'password'),
       ),
     );
@@ -46,33 +65,45 @@ void main() {
 
   testWidgets('menampilkan snackbar error saat login gagal', (tester) async {
     when(
-      () => repository.login(username: 'emilys', password: 'wrong'),
-    ).thenThrow(const UnauthorizedException('Kredensial tidak valid.'));
+      () => repository.login(email: 'budi@example.com', password: 'wrong'),
+    ).thenThrow(const UnauthorizedException('Email atau password salah.'));
 
     await pumpLoginPage(tester);
 
-    await tester.enterText(find.byKey(const Key('login.username')), 'emilys');
+    await tester.enterText(
+      find.byKey(const Key('login.email')),
+      'budi@example.com',
+    );
     await tester.enterText(find.byKey(const Key('login.password')), 'wrong');
     await tester.tap(find.byKey(const Key('login.submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Kredensial tidak valid.'), findsOneWidget);
+    expect(find.text('Email atau password salah.'), findsOneWidget);
   });
 
   testWidgets('memanggil repository.login saat form valid', (tester) async {
     when(
-      () => repository.login(username: 'emilys', password: 'secret'),
-    ).thenAnswer((_) async => const AuthUser(id: 1, username: 'emilys'));
+      () => repository.login(email: 'budi@example.com', password: 'secret'),
+    ).thenAnswer(
+      (_) async => const AuthUser(
+        id: 1,
+        name: 'Budi Santoso',
+        email: 'budi@example.com',
+      ),
+    );
 
     await pumpLoginPage(tester);
 
-    await tester.enterText(find.byKey(const Key('login.username')), 'emilys');
+    await tester.enterText(
+      find.byKey(const Key('login.email')),
+      'budi@example.com',
+    );
     await tester.enterText(find.byKey(const Key('login.password')), 'secret');
     await tester.tap(find.byKey(const Key('login.submit')));
     await tester.pumpAndSettle();
 
     verify(
-      () => repository.login(username: 'emilys', password: 'secret'),
+      () => repository.login(email: 'budi@example.com', password: 'secret'),
     ).called(1);
   });
 }

@@ -1,4 +1,4 @@
 {
-  "API_BASE_URL": "https://dummyjson.com",
+  "API_BASE_URL": "https://hris.test/api",
   "ENABLE_HTTP_LOGS": true
 }

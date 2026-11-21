@@ -6,7 +6,7 @@ import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_api.dar
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 
 /// Pintu masuk data Auth untuk layer aplikasi.
-/// Mengkoordinasikan API autentikasi dan penyimpanan token terenkripsi.
+/// Mengkoordinasikan API autentikasi Laravel Sanctum dan penyimpanan token terenkripsi.
 class AuthRepository {
   AuthRepository(this._api, this._tokenStorage);
 
@@ -27,18 +27,28 @@ class AuthRepository {
   }
 
   Future<AuthUser> login({
-    required String username,
+    required String email,
     required String password,
   }) async {
-    final result = await _api.login(username: username, password: password);
+    final result = await _api.login(email: email, password: password);
     await _tokenStorage.saveTokens(
       accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      refreshToken: '',
     );
     return result.user;
   }
 
-  Future<void> logout() => _tokenStorage.clear();
+  Future<void> logout() async {
+    final token = await _tokenStorage.readAccessToken();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await _api.logout();
+      } on AppException {
+        // Tetap hapus token lokal meskipun pencabutan token di server gagal.
+      }
+    }
+    await _tokenStorage.clear();
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>(

@@ -13,7 +13,7 @@ class Env {
   factory Env.fromEnvironment() => const Env(
     apiBaseUrl: String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://dummyjson.com',
+      defaultValue: 'https://hris.test/api',
     ),
     enableHttpLogs: bool.fromEnvironment(
       'ENABLE_HTTP_LOGS',

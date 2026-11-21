@@ -9,15 +9,12 @@ class LoginController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
-  Future<bool> submit({
-    required String username,
-    required String password,
-  }) async {
+  Future<bool> submit({required String email, required String password}) async {
     state = const AsyncLoading();
     final result = await AsyncValue.guard(
       () => ref
           .read(authControllerProvider.notifier)
-          .login(username: username, password: password),
+          .login(email: email, password: password),
     );
     if (!ref.mounted) return false;
     state = result;
