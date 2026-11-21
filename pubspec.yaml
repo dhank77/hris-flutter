@@ -1,6 +1,6 @@
 name: flutter_antigravity_starter_pack
 description: "Flutter AI Starter — Riverpod 3, Dio, Freezed, GoRouter, secure storage."
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -19,22 +19,22 @@ dependencies:
   # HTTP
   dio: ^5.8.0
   # Routing
-  go_router: '>=16.0.0 <19.0.0'
+  go_router: ">=16.0.0 <19.0.0"
   # Model immutable + JSON
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
   # Penyimpanan
   shared_preferences: ^2.3.0
-  flutter_secure_storage: '>=9.2.0 <12.0.0'
+  flutter_secure_storage: ">=9.2.0 <12.0.0"
   # Logging
   logger: ^2.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: '>=5.0.0 <7.0.0'
+  flutter_lints: ">=5.0.0 <7.0.0"
   build_runner: ^2.4.15
-  freezed: '>=3.0.0 <5.0.0'
+  freezed: ">=3.0.0 <5.0.0"
   json_serializable: ^6.9.0
   mocktail: ^1.0.4
 
