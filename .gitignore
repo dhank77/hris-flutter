@@ -44,6 +44,7 @@ app.*.map.json
 !.env.example
 config/*.local.json
 config/prod.json
+config/client_secret_*.json
 
 # Kode hasil build_runner (dibuat ulang oleh `make gen` / setup.sh)
 *.g.dart

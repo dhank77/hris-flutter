@@ -28,11 +28,13 @@ class PluginGoogleAuthService implements GoogleAuthService {
   Future<void>? _initFuture;
 
   Future<void> _ensureInitialized() {
+    final clientId = _env.googleClientId.isEmpty ? null : _env.googleClientId;
+    final serverClientId = _env.googleServerClientId.isEmpty
+        ? clientId
+        : _env.googleServerClientId;
     return _initFuture ??= _googleSignIn.initialize(
-      clientId: _env.googleClientId.isEmpty ? null : _env.googleClientId,
-      serverClientId: _env.googleServerClientId.isEmpty
-          ? null
-          : _env.googleServerClientId,
+      clientId: clientId,
+      serverClientId: serverClientId,
     );
   }
 

@@ -34,9 +34,15 @@ class Env {
         'ENABLE_HTTP_LOGS',
         defaultValue: kDebugMode,
       ),
-      googleClientId: const String.fromEnvironment('GOOGLE_CLIENT_ID'),
+      googleClientId: const String.fromEnvironment(
+        'GOOGLE_CLIENT_ID',
+        defaultValue:
+            '606874341263-g023t9jdgigb9abmr8v3n85u19tss46p.apps.googleusercontent.com',
+      ),
       googleServerClientId: const String.fromEnvironment(
         'GOOGLE_SERVER_CLIENT_ID',
+        defaultValue:
+            '606874341263-ate3jcvcfugol5gvv9phn7egi9pfl97n.apps.googleusercontent.com',
       ),
     );
   }
