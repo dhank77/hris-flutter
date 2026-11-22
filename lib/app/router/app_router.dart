@@ -57,7 +57,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.faceRecognition,
-        builder: (context, state) => const FaceRecognitionPage(),
+        builder: (context, state) => FaceRecognitionPage(
+          attendanceVerifyMode:
+              state.uri.queryParameters['mode'] == 'attendance',
+        ),
       ),
       // <generator:routes> — scripts/new_feature.sh menambahkan route di atas baris ini.
     ],

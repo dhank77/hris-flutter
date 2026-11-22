@@ -118,10 +118,12 @@ void main() {
       clockInAt: '2026-11-22T08:00:00+08:00',
       status: 'present',
     );
+    final sampleEmbedding = List<double>.filled(192, 0.0)..[0] = 1.0;
     when(
       () => repository.clockIn(
         latitude: -6.2088,
         longitude: 106.8456,
+        faceEmbedding: sampleEmbedding,
         notes: 'Hadir',
       ),
     ).thenAnswer(
@@ -135,7 +137,7 @@ void main() {
     await load();
     final message = await container
         .read(attendanceControllerProvider.notifier)
-        .clockIn(notes: 'Hadir');
+        .clockIn(faceEmbedding: sampleEmbedding, notes: 'Hadir');
 
     final updated = container.read(attendanceControllerProvider).requireValue;
     expect(message, 'Clock in berhasil.');

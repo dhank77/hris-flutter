@@ -14,8 +14,13 @@ import 'package:flutter_antigravity_starter_pack/features/face_recognition/data/
 enum _FaceMode { verify, register }
 
 /// Halaman Registrasi Wajah & Pengenalan Wajah berbasis TFLite (MobileFaceNet) + ML Kit.
+///
+/// Jika [attendanceVerifyMode] bernilai `true`, halaman mengembalikan `List<double>`
+/// embedding wajah yang terverifikasi ke pemanggil melalui `Navigator.pop`.
 class FaceRecognitionPage extends ConsumerStatefulWidget {
-  const FaceRecognitionPage({super.key});
+  const FaceRecognitionPage({this.attendanceVerifyMode = false, super.key});
+
+  final bool attendanceVerifyMode;
 
   @override
   ConsumerState<FaceRecognitionPage> createState() =>
@@ -59,7 +64,6 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
         return;
       }
 
-      // Prioritaskan kamera depan untuk registrasi/pengenalan wajah.
       final frontIndex = _cameras.indexWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
       );
@@ -128,46 +132,17 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
         setState(() => _selectedMode = _FaceMode.verify);
         context.showSnackBar(message);
       } else {
-        final result = await notifier.verifyFromImagePath(photo.path);
+        final outcome = await notifier.verifyFromImagePath(photo.path);
         if (!mounted) return;
-        context.showSnackBar(result.message, isError: !result.matched);
+        if (widget.attendanceVerifyMode && outcome.result.matched) {
+          Navigator.of(context).pop<List<double>>(outcome.embedding);
+          return;
+        }
+        context.showSnackBar(
+          outcome.result.message,
+          isError: !outcome.result.matched,
+        );
       }
-    } catch (error) {
-      if (!mounted) return;
-      context.showSnackBar(describeError(error), isError: true);
-    }
-  }
-
-  Future<void> _confirmDelete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Data Wajah?'),
-        content: const Text(
-          'Data embedding wajah yang tersimpan di server akan dihapus. Anda perlu registrasi ulang untuk pengenalan wajah.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    try {
-      final message = await ref
-          .read(faceRecognitionControllerProvider.notifier)
-          .deleteFace();
-      if (!mounted) return;
-      setState(() => _selectedMode = _FaceMode.register);
-      context.showSnackBar(message);
     } catch (error) {
       if (!mounted) return;
       context.showSnackBar(describeError(error), isError: true);
@@ -180,7 +155,11 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pengenalan Wajah'),
+        title: Text(
+          widget.attendanceVerifyMode
+              ? 'Verifikasi Wajah Absensi'
+              : 'Pengenalan Wajah',
+        ),
         actions: [
           if (_cameras.length > 1)
             IconButton(
@@ -201,35 +180,41 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
         onRetry: () =>
             ref.read(faceRecognitionControllerProvider.notifier).refresh(),
         data: (viewState) {
-          final mode =
-              _selectedMode ??
-              (viewState.isRegistered ? _FaceMode.verify : _FaceMode.register);
+          final mode = !viewState.isRegistered
+              ? _FaceMode.register
+              : (!viewState.canRegister
+                    ? _FaceMode.verify
+                    : (_selectedMode ?? _FaceMode.verify));
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
-              _FaceStatusBanner(viewState: viewState, onDelete: _confirmDelete),
-              const SizedBox(height: AppSpacing.md),
-              SegmentedButton<_FaceMode>(
-                segments: [
-                  const ButtonSegment(
-                    value: _FaceMode.register,
-                    icon: Icon(Icons.face_retouching_natural),
-                    label: Text('Registrasi Wajah'),
-                  ),
-                  ButtonSegment(
-                    value: _FaceMode.verify,
-                    enabled: viewState.isRegistered,
-                    icon: const Icon(Icons.verified_user_outlined),
-                    label: const Text('Pengenalan Wajah'),
-                  ),
-                ],
-                selected: {mode},
-                onSelectionChanged: (selection) {
-                  setState(() => _selectedMode = selection.first);
-                },
+              _FaceStatusBanner(
+                viewState: viewState,
+                attendanceVerifyMode: widget.attendanceVerifyMode,
               ),
               const SizedBox(height: AppSpacing.md),
+              if (viewState.canRegister && viewState.isRegistered) ...[
+                SegmentedButton<_FaceMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _FaceMode.register,
+                      icon: Icon(Icons.face_retouching_natural),
+                      label: Text('Registrasi Ulang'),
+                    ),
+                    ButtonSegment(
+                      value: _FaceMode.verify,
+                      icon: Icon(Icons.verified_user_outlined),
+                      label: Text('Pengenalan Wajah'),
+                    ),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (selection) {
+                    setState(() => _selectedMode = selection.first);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               _CameraPreviewCard(
                 controller: _cameraController,
                 isInitializing: _isCameraInitializing,
@@ -268,7 +253,9 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                       ? (viewState.isRegistered
                             ? 'Perbarui Registrasi Wajah'
                             : 'Ambil & Daftarkan Wajah')
-                      : 'Verifikasi Wajah Sekarang',
+                      : (widget.attendanceVerifyMode
+                            ? 'Verifikasi Wajah & Lanjutkan Absensi'
+                            : 'Verifikasi Wajah Sekarang'),
                 ),
               ),
               if (viewState.lastVerifyResult != null) ...[
@@ -287,16 +274,39 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
 }
 
 class _FaceStatusBanner extends StatelessWidget {
-  const _FaceStatusBanner({required this.viewState, required this.onDelete});
+  const _FaceStatusBanner({
+    required this.viewState,
+    required this.attendanceVerifyMode,
+  });
 
   final FaceRecognitionViewState viewState;
-  final VoidCallback onDelete;
+  final bool attendanceVerifyMode;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final isRegistered = viewState.isRegistered;
+    final canRegister = viewState.canRegister;
     final profile = viewState.status.faceProfile;
+
+    final String title;
+    final String subtitle;
+
+    if (!isRegistered) {
+      title = 'Wajah Belum Terdaftar';
+      subtitle = attendanceVerifyMode
+          ? 'Anda harus mendaftarkan wajah terlebih dahulu sebelum melakukan absensi.'
+          : 'Registrasi wajah hanya dapat dilakukan 1 kali. Pastikan pencahayaan baik.';
+    } else if (canRegister) {
+      title = 'Registrasi Ulang Diizinkan Admin';
+      subtitle =
+          'Model: ${profile?.modelVersion ?? 'mobilefacenet'} • Anda dapat memperbarui data wajah satu kali.';
+    } else {
+      title = 'Wajah Sudah Terdaftar';
+      subtitle = attendanceVerifyMode
+          ? 'Posisikan wajah di kamera untuk verifikasi sebelum clock in/out.'
+          : 'Registrasi terkunci (1x). Hubungi admin jika perlu izin registrasi ulang.';
+    }
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -324,19 +334,14 @@ class _FaceStatusBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isRegistered
-                      ? 'Wajah Sudah Terdaftar'
-                      : 'Wajah Belum Terdaftar',
+                  title,
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isRegistered
-                      ? 'Model: ${profile?.modelVersion ?? 'mobilefacenet'} '
-                            '(${profile?.embedding.length ?? 0} dimensi)'
-                      : 'Silakan daftarkan wajah Anda terlebih dahulu untuk menggunakan fitur pengenalan wajah.',
+                  subtitle,
                   style: context.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -344,12 +349,6 @@ class _FaceStatusBanner extends StatelessWidget {
               ],
             ),
           ),
-          if (isRegistered)
-            IconButton(
-              tooltip: 'Hapus data wajah',
-              icon: Icon(Icons.delete_outline, color: colors.error),
-              onPressed: viewState.isProcessing ? null : onDelete,
-            ),
         ],
       ),
     );
@@ -428,7 +427,6 @@ class _CameraPreviewCard extends StatelessWidget {
                     child: CameraPreview(controller!),
                   ),
                 ),
-                // Panduan posisi wajah berbentuk oval.
                 Center(
                   child: Container(
                     width: 210,

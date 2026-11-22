@@ -19,6 +19,7 @@ class FaceRecognitionViewState {
   final double? localSimilarity;
 
   bool get isRegistered => status.registered && status.faceProfile != null;
+  bool get canRegister => !isRegistered || status.canReregister;
 
   FaceRecognitionViewState copyWith({
     FaceStatus? status,
@@ -85,6 +86,7 @@ class FaceRecognitionController
         latest.copyWith(
           status: FaceStatus(
             registered: result.registered,
+            canReregister: result.canReregister,
             faceProfile: result.faceProfile,
           ),
           isProcessing: false,
@@ -101,7 +103,8 @@ class FaceRecognitionController
   }
 
   /// Ekstrak embedding wajah dari [imagePath], hitung kemiripan lokal, dan verifikasi ke Laravel.
-  Future<FaceVerifyResult> verifyFromImagePath(String imagePath) async {
+  Future<({FaceVerifyResult result, List<double> embedding})>
+  verifyFromImagePath(String imagePath) async {
     final current = state.asData?.value;
     if (current == null) {
       throw StateError('Status wajah belum siap.');
@@ -123,7 +126,7 @@ class FaceRecognitionController
       final repo = ref.read(faceRecognitionRepositoryProvider);
       final result = await repo.verifyFace(embedding: embedding);
 
-      if (!ref.mounted) return result;
+      if (!ref.mounted) return (result: result, embedding: embedding);
 
       final latest = state.asData?.value ?? current;
       state = AsyncData(
@@ -133,41 +136,7 @@ class FaceRecognitionController
           localSimilarity: localSimilarity,
         ),
       );
-      return result;
-    } catch (_) {
-      if (ref.mounted) {
-        final latest = state.asData?.value ?? current;
-        state = AsyncData(latest.copyWith(isProcessing: false));
-      }
-      rethrow;
-    }
-  }
-
-  /// Hapus data wajah terdaftar di Laravel agar pengguna bisa registrasi ulang.
-  Future<String> deleteFace() async {
-    final current = state.asData?.value;
-    if (current == null) {
-      throw StateError('Status wajah belum siap.');
-    }
-
-    state = AsyncData(current.copyWith(isProcessing: true));
-
-    try {
-      final repo = ref.read(faceRecognitionRepositoryProvider);
-      final message = await repo.deleteFace();
-
-      if (!ref.mounted) return message;
-
-      final latest = state.asData?.value ?? current;
-      state = AsyncData(
-        latest.copyWith(
-          status: const FaceStatus(registered: false, faceProfile: null),
-          isProcessing: false,
-          clearVerifyResult: true,
-          clearLocalSimilarity: true,
-        ),
-      );
-      return message;
+      return (result: result, embedding: embedding);
     } catch (_) {
       if (ref.mounted) {
         final latest = state.asData?.value ?? current;

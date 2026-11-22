@@ -47,10 +47,10 @@ void main() {
     repo = _MockFaceRecognitionRepository();
   });
 
-  test('build loads unregistered face status', () async {
-    when(
-      () => repo.getStatus(),
-    ).thenAnswer((_) async => const FaceStatus(registered: false));
+  test('build loads unregistered face status with canRegister true', () async {
+    when(() => repo.getStatus()).thenAnswer(
+      (_) async => const FaceStatus(registered: false, canReregister: true),
+    );
 
     final container = ProviderContainer.test(
       overrides: [
@@ -65,54 +65,62 @@ void main() {
       faceRecognitionControllerProvider.future,
     );
     expect(state.isRegistered, isFalse);
-  });
-
-  test('registerFromImagePath extracts embedding and updates status', () async {
-    when(
-      () => repo.getStatus(),
-    ).thenAnswer((_) async => const FaceStatus(registered: false));
-    when(() => repo.registerFace(embedding: sampleEmbedding)).thenAnswer(
-      (_) async => FaceRegisterResult(
-        message: 'Registrasi wajah berhasil disimpan.',
-        registered: true,
-        faceProfile: FaceProfile(
-          id: 1,
-          modelVersion: 'mobilefacenet',
-          registeredAt: '2026-11-22T21:30:00Z',
-          embedding: sampleEmbedding,
-        ),
-      ),
-    );
-
-    final container = ProviderContainer.test(
-      overrides: [
-        faceRecognitionRepositoryProvider.overrideWithValue(repo),
-        faceEmbeddingServiceProvider.overrideWithValue(
-          _FakeFaceEmbeddingService(sampleEmbedding),
-        ),
-      ],
-    );
-
-    await container.read(faceRecognitionControllerProvider.future);
-    final message = await container
-        .read(faceRecognitionControllerProvider.notifier)
-        .registerFromImagePath('/tmp/face.jpg');
-
-    expect(message, 'Registrasi wajah berhasil disimpan.');
-    final updated = container
-        .read(faceRecognitionControllerProvider)
-        .asData
-        ?.value;
-    expect(updated?.isRegistered, isTrue);
-    expect(updated?.status.faceProfile?.embedding.length, 192);
+    expect(state.canRegister, isTrue);
   });
 
   test(
-    'verifyFromImagePath computes local similarity and verifies via API',
+    'registerFromImagePath locks canRegister until admin approves',
+    () async {
+      when(() => repo.getStatus()).thenAnswer(
+        (_) async => const FaceStatus(registered: false, canReregister: true),
+      );
+      when(() => repo.registerFace(embedding: sampleEmbedding)).thenAnswer(
+        (_) async => FaceRegisterResult(
+          message: 'Registrasi wajah berhasil disimpan.',
+          registered: true,
+          canReregister: false,
+          faceProfile: FaceProfile(
+            id: 1,
+            modelVersion: 'mobilefacenet',
+            canReregister: false,
+            registeredAt: '2026-11-22T21:30:00Z',
+            embedding: sampleEmbedding,
+          ),
+        ),
+      );
+
+      final container = ProviderContainer.test(
+        overrides: [
+          faceRecognitionRepositoryProvider.overrideWithValue(repo),
+          faceEmbeddingServiceProvider.overrideWithValue(
+            _FakeFaceEmbeddingService(sampleEmbedding),
+          ),
+        ],
+      );
+
+      await container.read(faceRecognitionControllerProvider.future);
+      final message = await container
+          .read(faceRecognitionControllerProvider.notifier)
+          .registerFromImagePath('/tmp/face.jpg');
+
+      expect(message, 'Registrasi wajah berhasil disimpan.');
+      final updated = container
+          .read(faceRecognitionControllerProvider)
+          .asData
+          ?.value;
+      expect(updated?.isRegistered, isTrue);
+      expect(updated?.canRegister, isFalse);
+      expect(updated?.status.faceProfile?.embedding.length, 192);
+    },
+  );
+
+  test(
+    'verifyFromImagePath computes local similarity and returns embedding',
     () async {
       when(() => repo.getStatus()).thenAnswer(
         (_) async => FaceStatus(
           registered: true,
+          canReregister: false,
           faceProfile: FaceProfile(id: 1, embedding: sampleEmbedding),
         ),
       );
@@ -136,11 +144,12 @@ void main() {
       );
 
       await container.read(faceRecognitionControllerProvider.future);
-      final result = await container
+      final outcome = await container
           .read(faceRecognitionControllerProvider.notifier)
           .verifyFromImagePath('/tmp/verify.jpg');
 
-      expect(result.matched, isTrue);
+      expect(outcome.result.matched, isTrue);
+      expect(outcome.embedding, sampleEmbedding);
       final updated = container
           .read(faceRecognitionControllerProvider)
           .asData
@@ -149,37 +158,4 @@ void main() {
       expect(updated?.localSimilarity, closeTo(1.0, 0.001));
     },
   );
-
-  test('deleteFace resets registration status', () async {
-    when(() => repo.getStatus()).thenAnswer(
-      (_) async => FaceStatus(
-        registered: true,
-        faceProfile: FaceProfile(id: 1, embedding: sampleEmbedding),
-      ),
-    );
-    when(
-      () => repo.deleteFace(),
-    ).thenAnswer((_) async => 'Data wajah berhasil dihapus.');
-
-    final container = ProviderContainer.test(
-      overrides: [
-        faceRecognitionRepositoryProvider.overrideWithValue(repo),
-        faceEmbeddingServiceProvider.overrideWithValue(
-          _FakeFaceEmbeddingService(sampleEmbedding),
-        ),
-      ],
-    );
-
-    await container.read(faceRecognitionControllerProvider.future);
-    final msg = await container
-        .read(faceRecognitionControllerProvider.notifier)
-        .deleteFace();
-
-    expect(msg, 'Data wajah berhasil dihapus.');
-    final updated = container
-        .read(faceRecognitionControllerProvider)
-        .asData
-        ?.value;
-    expect(updated?.isRegistered, isFalse);
-  });
 }

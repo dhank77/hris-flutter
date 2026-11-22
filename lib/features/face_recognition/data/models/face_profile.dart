@@ -11,6 +11,7 @@ abstract class FaceProfile with _$FaceProfile {
     @JsonKey(name: 'model_version')
     @Default('mobilefacenet')
     String modelVersion,
+    @JsonKey(name: 'can_reregister') @Default(false) bool canReregister,
     @JsonKey(name: 'registered_at') String? registeredAt,
     @Default(<double>[]) List<double> embedding,
   }) = _FaceProfile;
@@ -24,6 +25,7 @@ abstract class FaceProfile with _$FaceProfile {
 abstract class FaceStatus with _$FaceStatus {
   const factory FaceStatus({
     @Default(false) bool registered,
+    @JsonKey(name: 'can_reregister') @Default(true) bool canReregister,
     @JsonKey(name: 'face_profile') FaceProfile? faceProfile,
   }) = _FaceStatus;
 
@@ -37,6 +39,7 @@ abstract class FaceRegisterResult with _$FaceRegisterResult {
   const factory FaceRegisterResult({
     @Default('') String message,
     @Default(true) bool registered,
+    @JsonKey(name: 'can_reregister') @Default(false) bool canReregister,
     @JsonKey(name: 'face_profile') FaceProfile? faceProfile,
   }) = _FaceRegisterResult;
 

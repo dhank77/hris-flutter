@@ -159,16 +159,29 @@ class AttendanceController extends AsyncNotifier<AttendanceViewState> {
     }
   }
 
-  /// Kirim clock in jika pegawai berada di dalam radius kantor.
-  Future<String> clockIn({String? notes}) =>
-      _submitAttendance(isClockIn: true, notes: notes);
+  /// Kirim clock in setelah verifikasi wajah jika pegawai berada di dalam radius kantor.
+  Future<String> clockIn({
+    required List<double> faceEmbedding,
+    String? notes,
+  }) => _submitAttendance(
+    isClockIn: true,
+    faceEmbedding: faceEmbedding,
+    notes: notes,
+  );
 
-  /// Kirim clock out jika pegawai berada di dalam radius kantor.
-  Future<String> clockOut({String? notes}) =>
-      _submitAttendance(isClockIn: false, notes: notes);
+  /// Kirim clock out setelah verifikasi wajah jika pegawai berada di dalam radius kantor.
+  Future<String> clockOut({
+    required List<double> faceEmbedding,
+    String? notes,
+  }) => _submitAttendance(
+    isClockIn: false,
+    faceEmbedding: faceEmbedding,
+    notes: notes,
+  );
 
   Future<String> _submitAttendance({
     required bool isClockIn,
+    required List<double> faceEmbedding,
     String? notes,
   }) async {
     final current = state.asData?.value;
@@ -191,11 +204,13 @@ class AttendanceController extends AsyncNotifier<AttendanceViewState> {
           ? await repo.clockIn(
               latitude: position.latitude,
               longitude: position.longitude,
+              faceEmbedding: faceEmbedding,
               notes: notes,
             )
           : await repo.clockOut(
               latitude: position.latitude,
               longitude: position.longitude,
+              faceEmbedding: faceEmbedding,
               notes: notes,
             );
 

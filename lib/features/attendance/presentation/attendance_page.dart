@@ -29,12 +29,23 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   }
 
   Future<void> _handleClockAction({required bool isClockIn}) async {
+    final verifiedEmbedding = await context.push<List<double>>(
+      '${AppRoutes.faceRecognition}?mode=attendance',
+    );
+    if (verifiedEmbedding == null || !mounted) return;
+
     final controller = ref.read(attendanceControllerProvider.notifier);
     final notes = _notesController.text;
     try {
       final message = isClockIn
-          ? await controller.clockIn(notes: notes)
-          : await controller.clockOut(notes: notes);
+          ? await controller.clockIn(
+              faceEmbedding: verifiedEmbedding,
+              notes: notes,
+            )
+          : await controller.clockOut(
+              faceEmbedding: verifiedEmbedding,
+              notes: notes,
+            );
       if (!mounted) return;
       _notesController.clear();
       context.showSnackBar(message);

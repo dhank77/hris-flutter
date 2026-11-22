@@ -17,14 +17,26 @@ class AttendanceRepository {
   Future<AttendanceActionResult> clockIn({
     required double latitude,
     required double longitude,
+    required List<double> faceEmbedding,
     String? notes,
-  }) => _api.clockIn(latitude: latitude, longitude: longitude, notes: notes);
+  }) => _api.clockIn(
+    latitude: latitude,
+    longitude: longitude,
+    faceEmbedding: faceEmbedding,
+    notes: notes,
+  );
 
   Future<AttendanceActionResult> clockOut({
     required double latitude,
     required double longitude,
+    required List<double> faceEmbedding,
     String? notes,
-  }) => _api.clockOut(latitude: latitude, longitude: longitude, notes: notes);
+  }) => _api.clockOut(
+    latitude: latitude,
+    longitude: longitude,
+    faceEmbedding: faceEmbedding,
+    notes: notes,
+  );
 }
 
 final attendanceRepositoryProvider = Provider<AttendanceRepository>(

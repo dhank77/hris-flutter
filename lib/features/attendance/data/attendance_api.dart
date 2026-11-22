@@ -34,6 +34,7 @@ class AttendanceApi {
   Future<AttendanceActionResult> clockIn({
     required double latitude,
     required double longitude,
+    required List<double> faceEmbedding,
     String? notes,
   }) => guardApi(() async {
     final response = await _dio.post<Object?>(
@@ -41,6 +42,7 @@ class AttendanceApi {
       data: {
         'latitude': latitude,
         'longitude': longitude,
+        'face_embedding': faceEmbedding,
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
       },
     );
@@ -51,6 +53,7 @@ class AttendanceApi {
   Future<AttendanceActionResult> clockOut({
     required double latitude,
     required double longitude,
+    required List<double> faceEmbedding,
     String? notes,
   }) => guardApi(() async {
     final response = await _dio.post<Object?>(
@@ -58,6 +61,7 @@ class AttendanceApi {
       data: {
         'latitude': latitude,
         'longitude': longitude,
+        'face_embedding': faceEmbedding,
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
       },
     );
