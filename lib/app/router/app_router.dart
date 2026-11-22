@@ -12,6 +12,8 @@ import 'package:flutter_antigravity_starter_pack/features/auth/presentation/spla
 import 'package:flutter_antigravity_starter_pack/features/home/presentation/home_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/settings/presentation/settings_page.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/attendance/presentation/attendance_page.dart';
+
 // <generator:imports> — scripts/new_feature.sh menambahkan import di atas baris ini.
 
 /// GoRouter dibuat SEKALI untuk seluruh umur aplikasi.
@@ -46,6 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.attendance,
+        builder: (context, state) => const AttendancePage(),
       ),
       // <generator:routes> — scripts/new_feature.sh menambahkan route di atas baris ini.
     ],

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:flutter_antigravity_starter_pack/app/router/app_routes.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
@@ -21,13 +23,24 @@ void main() {
     final repository = _MockAuthRepository();
     when(() => repository.restoreSession()).thenAnswer((_) async => user);
 
+    final router = GoRouter(
+      initialLocation: AppRoutes.home,
+      routes: [
+        GoRoute(path: AppRoutes.home, builder: (_, _) => const HomePage()),
+        GoRoute(
+          path: AppRoutes.attendance,
+          builder: (_, _) => const Scaffold(body: Text('Halaman Absensi')),
+        ),
+      ],
+    );
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(repository),
           splashDelayProvider.overrideWithValue(Duration.zero),
         ],
-        child: const MaterialApp(home: HomePage()),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
@@ -53,11 +66,12 @@ void main() {
       final absensiFinder = find.byKey(const Key('home.absensi'));
       expect(absensiFinder, findsOneWidget);
       expect(find.text('Absensi'), findsOneWidget);
-      await tester.tap(absensiFinder);
-      await tester.pumpAndSettle();
-
       expect(find.byKey(const Key('home.settings')), findsOneWidget);
       expect(find.text('Setting'), findsOneWidget);
+
+      await tester.tap(absensiFinder);
+      await tester.pumpAndSettle();
+      expect(find.text('Halaman Absensi'), findsOneWidget);
     },
   );
 }

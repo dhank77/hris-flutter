@@ -68,6 +68,8 @@
 	</array>
 	<key>GIDClientID</key>
 	<string>606874341263-g023t9jdgigb9abmr8v3n85u19tss46p.apps.googleusercontent.com</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi memerlukan akses lokasi GPS untuk memverifikasi bahwa Anda berada dalam radius kantor saat melakukan absensi.</string>
 	<key>GIDServerClientID</key>
 	<string>606874341263-ate3jcvcfugol5gvv9phn7egi9pfl97n.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>

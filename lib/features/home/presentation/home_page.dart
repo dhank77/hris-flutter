@@ -43,6 +43,7 @@ class HomePage extends ConsumerWidget {
       ),
       bottomNavigationBar: AppBottomNavBar(
         currentTab: AppBottomNavTab.home,
+        onAbsensiTap: () => context.go(AppRoutes.attendance),
         onSettingsTap: () => context.go(AppRoutes.settings),
       ),
     );
