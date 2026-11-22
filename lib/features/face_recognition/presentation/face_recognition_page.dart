@@ -15,7 +15,14 @@ import 'package:flutter_antigravity_starter_pack/features/face_recognition/data/
 
 enum _FaceMode { verify, register }
 
-enum _LivenessStage { searchingFace, waitingBlink, eyesClosed, blinkVerified }
+enum _LivenessStage {
+  searchingFace,
+  waitingBlink,
+  eyesClosed,
+  waitingHeadTurn,
+  waitingFrontal,
+  livenessVerified,
+}
 
 /// Halaman Registrasi Wajah & Pengenalan Wajah berbasis TFLite (MobileFaceNet) + ML Kit.
 ///
@@ -150,7 +157,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
   Future<void> _processCameraImage(CameraImage image) async {
     if (_isProcessingFrame ||
         !mounted ||
-        _livenessStage == _LivenessStage.blinkVerified) {
+        _livenessStage == _LivenessStage.livenessVerified) {
       return;
     }
 
@@ -172,22 +179,41 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
       final face = faces.first;
       final leftOpen = face.leftEyeOpenProbability;
       final rightOpen = face.rightEyeOpenProbability;
-      if (leftOpen == null || rightOpen == null) return;
+      final yaw = face.headEulerAngleY;
 
       const openThreshold = 0.65;
       const closedThreshold = 0.30;
+      const headTurnThreshold = 18.0;
+      const frontalThreshold = 12.0;
 
       if (_livenessStage == _LivenessStage.searchingFace) {
-        if (leftOpen > openThreshold && rightOpen > openThreshold) {
+        if (leftOpen != null &&
+            rightOpen != null &&
+            leftOpen > openThreshold &&
+            rightOpen > openThreshold) {
           setState(() => _livenessStage = _LivenessStage.waitingBlink);
         }
       } else if (_livenessStage == _LivenessStage.waitingBlink) {
-        if (leftOpen < closedThreshold && rightOpen < closedThreshold) {
+        if (leftOpen != null &&
+            rightOpen != null &&
+            leftOpen < closedThreshold &&
+            rightOpen < closedThreshold) {
           setState(() => _livenessStage = _LivenessStage.eyesClosed);
         }
       } else if (_livenessStage == _LivenessStage.eyesClosed) {
-        if (leftOpen > openThreshold && rightOpen > openThreshold) {
-          setState(() => _livenessStage = _LivenessStage.blinkVerified);
+        if (leftOpen != null &&
+            rightOpen != null &&
+            leftOpen > openThreshold &&
+            rightOpen > openThreshold) {
+          setState(() => _livenessStage = _LivenessStage.waitingHeadTurn);
+        }
+      } else if (_livenessStage == _LivenessStage.waitingHeadTurn) {
+        if (yaw != null && yaw.abs() >= headTurnThreshold) {
+          setState(() => _livenessStage = _LivenessStage.waitingFrontal);
+        }
+      } else if (_livenessStage == _LivenessStage.waitingFrontal) {
+        if (yaw != null && yaw.abs() <= frontalThreshold) {
+          setState(() => _livenessStage = _LivenessStage.livenessVerified);
         }
       }
     } catch (_) {
@@ -249,9 +275,9 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
       context.showSnackBar('Kamera belum siap.', isError: true);
       return;
     }
-    if (_livenessStage != _LivenessStage.blinkVerified) {
+    if (_livenessStage != _LivenessStage.livenessVerified) {
       context.showSnackBar(
-        'Silakan kedipkan mata terlebih dahulu sebelum memproses wajah.',
+        'Selesaikan kedipan mata dan hadapkan wajah ke kanan/kiri terlebih dahulu.',
         isError: true,
       );
       return;
@@ -328,8 +354,8 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
               : (!viewState.canRegister
                     ? _FaceMode.verify
                     : (_selectedMode ?? _FaceMode.verify));
-          final isBlinkVerified =
-              _livenessStage == _LivenessStage.blinkVerified;
+          final isLivenessVerified =
+              _livenessStage == _LivenessStage.livenessVerified;
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -380,7 +406,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                     (_isCameraInitializing ||
                         _cameraError != null ||
                         viewState.isProcessing ||
-                        !isBlinkVerified)
+                        !isLivenessVerified)
                     ? null
                     : () => _captureAndProcess(mode),
                 icon: viewState.isProcessing
@@ -397,8 +423,8 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                 label: Text(
                   viewState.isProcessing
                       ? 'Memproses wajah...'
-                      : !isBlinkVerified
-                      ? 'Kedipkan Mata Terlebih Dahulu'
+                      : !isLivenessVerified
+                      ? 'Selesaikan Liveness Check Dahulu'
                       : mode == _FaceMode.register
                       ? (viewState.isRegistered
                             ? 'Perbarui Registrasi Wajah'
@@ -574,15 +600,23 @@ class _CameraPreviewCard extends StatelessWidget {
                 Colors.black.withValues(alpha: 0.65),
               ),
               _LivenessStage.waitingBlink => (
-                'Wajah terdeteksi — Kedipkan mata Anda sekarang',
+                '1/2: Kedipkan mata Anda sekarang',
                 Colors.orange.shade800.withValues(alpha: 0.85),
               ),
               _LivenessStage.eyesClosed => (
-                'Mata tertutup — Buka mata kembali',
+                '1/2: Mata tertutup — Buka mata kembali',
                 Colors.orange.shade800.withValues(alpha: 0.85),
               ),
-              _LivenessStage.blinkVerified => (
-                'Kedipan terdeteksi ✓ Silakan lanjutkan',
+              _LivenessStage.waitingHeadTurn => (
+                '2/2: Kedipan ✓ — Hadapkan wajah ke kanan atau kiri',
+                Colors.orange.shade800.withValues(alpha: 0.85),
+              ),
+              _LivenessStage.waitingFrontal => (
+                '2/2: Gerakan ✓ — Hadapkan wajah lurus ke kamera',
+                Colors.blue.shade700.withValues(alpha: 0.85),
+              ),
+              _LivenessStage.livenessVerified => (
+                'Liveness terverifikasi ✓ Silakan lanjutkan',
                 Colors.green.shade700.withValues(alpha: 0.9),
               ),
             };
@@ -607,7 +641,7 @@ class _CameraPreviewCard extends StatelessWidget {
                       outsideColor: Colors.green.withValues(alpha: 0.45),
                       borderColor: isProcessing
                           ? colors.primary
-                          : livenessStage == _LivenessStage.blinkVerified
+                          : livenessStage == _LivenessStage.livenessVerified
                           ? Colors.lightGreenAccent
                           : Colors.white.withValues(alpha: 0.9),
                     ),
