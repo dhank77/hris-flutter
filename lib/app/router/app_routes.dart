@@ -8,5 +8,7 @@ abstract final class AppRoutes {
 
   static const attendance = '/attendance';
 
+  static const faceRecognition = '/face-recognition';
+
   // <generator:paths> — scripts/new_feature.sh menambahkan path di atas baris ini.
 }

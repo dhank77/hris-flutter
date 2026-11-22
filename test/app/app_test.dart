@@ -127,7 +127,10 @@ void main() {
     await tester.tap(find.byKey(const Key('home.settings')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('settings.logout')));
+    final logoutFinder = find.byKey(const Key('settings.logout'));
+    await tester.ensureVisible(logoutFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(logoutFinder);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('login.submit')), findsOneWidget);

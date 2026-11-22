@@ -14,6 +14,8 @@ import 'package:flutter_antigravity_starter_pack/features/settings/presentation/
 
 import 'package:flutter_antigravity_starter_pack/features/attendance/presentation/attendance_page.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/face_recognition/presentation/face_recognition_page.dart';
+
 // <generator:imports> — scripts/new_feature.sh menambahkan import di atas baris ini.
 
 /// GoRouter dibuat SEKALI untuk seluruh umur aplikasi.
@@ -52,6 +54,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.attendance,
         builder: (context, state) => const AttendancePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.faceRecognition,
+        builder: (context, state) => const FaceRecognitionPage(),
       ),
       // <generator:routes> — scripts/new_feature.sh menambahkan route di atas baris ini.
     ],

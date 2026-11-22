@@ -283,10 +283,14 @@ class _QuickMenuGrid extends StatelessWidget {
   const _QuickMenuGrid();
 
   static const _menus = [
-    (Icons.event_available_outlined, 'Cuti & Izin'),
-    (Icons.receipt_long_outlined, 'Slip Gaji'),
-    (Icons.history_rounded, 'Riwayat'),
-    (Icons.calendar_month_outlined, 'Jadwal'),
+    (
+      Icons.face_retouching_natural,
+      'Pengenalan Wajah',
+      AppRoutes.faceRecognition,
+    ),
+    (Icons.event_available_outlined, 'Cuti & Izin', null),
+    (Icons.receipt_long_outlined, 'Slip Gaji', null),
+    (Icons.history_rounded, 'Riwayat', null),
   ];
 
   @override
@@ -301,11 +305,17 @@ class _QuickMenuGrid extends StatelessWidget {
       crossAxisSpacing: AppSpacing.sm,
       childAspectRatio: 2.3,
       children: [
-        for (final (icon, label) in _menus)
+        for (final (icon, label, route) in _menus)
           Card(
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              onTap: () => context.showSnackBar('Fitur $label segera hadir'),
+              onTap: () {
+                if (route != null) {
+                  context.push(route);
+                } else {
+                  context.showSnackBar('Fitur $label segera hadir');
+                }
+              },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Row(

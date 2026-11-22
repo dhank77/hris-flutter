@@ -62,6 +62,17 @@ class SettingsPage extends ConsumerWidget {
           ),
           const Divider(height: AppSpacing.xl),
           ListTile(
+            key: const Key('settings.faceRecognition'),
+            leading: const Icon(Icons.face_retouching_natural),
+            title: const Text('Registrasi & Pengenalan Wajah'),
+            subtitle: const Text(
+              'Kelola data wajah untuk verifikasi biometrik',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.faceRecognition),
+          ),
+          const Divider(height: AppSpacing.xl),
+          ListTile(
             leading: const Icon(Icons.cloud_outlined),
             title: const Text('API'),
             subtitle: Text(env.apiBaseUrl),
