@@ -85,17 +85,28 @@ void main() {
     expect(find.byKey(const Key('login.submit')), findsOneWidget);
   });
 
-  testWidgets('membuka Beranda lalu pindah ke Pengaturan', (tester) async {
-    await pumpApp(tester, initialUser: sampleUser);
-    expect(find.text('Beranda'), findsOneWidget);
+  testWidgets(
+    'membuka Beranda lalu pindah ke Pengaturan dan kembali ke Beranda',
+    (tester) async {
+      await pumpApp(tester, initialUser: sampleUser);
+      expect(find.text('Beranda'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('home.settings')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home.settings')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Pengaturan'), findsOneWidget);
-    expect(find.text('Tema'), findsOneWidget);
-    expect(find.byKey(const Key('settings.logout')), findsOneWidget);
-  });
+      expect(find.text('Pengaturan'), findsOneWidget);
+      expect(find.text('Tema'), findsOneWidget);
+      expect(find.byKey(const Key('settings.logout')), findsOneWidget);
+      expect(find.byKey(const Key('home.nav.home')), findsOneWidget);
+      expect(find.byKey(const Key('home.absensi')), findsOneWidget);
+      expect(find.byKey(const Key('home.settings')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home.nav.home')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Beranda'), findsOneWidget);
+    },
+  );
 
   testWidgets('mengganti tema tersimpan di preferences', (tester) async {
     await pumpApp(tester, initialUser: sampleUser);

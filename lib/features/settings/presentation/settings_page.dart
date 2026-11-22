@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:flutter_antigravity_starter_pack/app/router/app_routes.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/theme_mode_controller.dart';
 import 'package:flutter_antigravity_starter_pack/core/config/env.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_bottom_nav_bar.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -76,6 +79,10 @@ class SettingsPage extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentTab: AppBottomNavTab.settings,
+        onHomeTap: () => context.go(AppRoutes.home),
       ),
     );
   }
