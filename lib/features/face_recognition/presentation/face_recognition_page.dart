@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
@@ -13,10 +15,12 @@ import 'package:flutter_antigravity_starter_pack/features/face_recognition/data/
 
 enum _FaceMode { verify, register }
 
+enum _LivenessStage { searchingFace, waitingBlink, eyesClosed, blinkVerified }
+
 /// Halaman Registrasi Wajah & Pengenalan Wajah berbasis TFLite (MobileFaceNet) + ML Kit.
 ///
-/// Jika [attendanceVerifyMode] bernilai `true`, halaman mengembalikan `List<double>`
-/// embedding wajah yang terverifikasi ke pemanggil melalui `Navigator.pop`.
+/// Mewajibkan deteksi kedipan mata (liveness check) sebelum proses registrasi maupun
+/// verifikasi wajah untuk absensi.
 class FaceRecognitionPage extends ConsumerStatefulWidget {
   const FaceRecognitionPage({this.attendanceVerifyMode = false, super.key});
 
@@ -35,15 +39,33 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
   String? _cameraError;
   _FaceMode? _selectedMode;
 
+  late final FaceDetector _livenessDetector;
+  bool _isProcessingFrame = false;
+  _LivenessStage _livenessStage = _LivenessStage.searchingFace;
+
   @override
   void initState() {
     super.initState();
+    _livenessDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        performanceMode: FaceDetectorMode.fast,
+        enableClassification: true,
+      ),
+    );
     _initCamera();
   }
 
   @override
   void dispose() {
-    _cameraController?.dispose();
+    final controller = _cameraController;
+    _cameraController = null;
+    if (controller != null) {
+      if (controller.value.isStreamingImages) {
+        controller.stopImageStream().catchError((_) {});
+      }
+      controller.dispose();
+    }
+    _livenessDetector.close();
     super.dispose();
   }
 
@@ -51,6 +73,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
     setState(() {
       _isCameraInitializing = true;
       _cameraError = null;
+      _livenessStage = _LivenessStage.searchingFace;
     });
 
     try {
@@ -80,17 +103,23 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
 
   Future<void> _startCameraController(CameraDescription description) async {
     final previous = _cameraController;
+    if (previous != null) {
+      if (previous.value.isStreamingImages) {
+        await previous.stopImageStream().catchError((_) {});
+      }
+      await previous.dispose();
+    }
+
     final controller = CameraController(
       description,
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: Platform.isIOS
           ? ImageFormatGroup.bgra8888
-          : ImageFormatGroup.jpeg,
+          : ImageFormatGroup.nv21,
     );
 
     _cameraController = controller;
-    await previous?.dispose();
 
     try {
       await controller.initialize();
@@ -98,7 +127,9 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
       setState(() {
         _isCameraInitializing = false;
         _cameraError = null;
+        _livenessStage = _LivenessStage.searchingFace;
       });
+      await _startLivenessStream();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -108,11 +139,108 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
     }
   }
 
+  Future<void> _startLivenessStream() async {
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (controller.value.isStreamingImages) return;
+
+    await controller.startImageStream(_processCameraImage);
+  }
+
+  Future<void> _processCameraImage(CameraImage image) async {
+    if (_isProcessingFrame ||
+        !mounted ||
+        _livenessStage == _LivenessStage.blinkVerified) {
+      return;
+    }
+
+    _isProcessingFrame = true;
+    try {
+      final inputImage = _toInputImage(image);
+      if (inputImage == null) return;
+
+      final faces = await _livenessDetector.processImage(inputImage);
+      if (!mounted) return;
+
+      if (faces.length != 1) {
+        if (_livenessStage != _LivenessStage.searchingFace) {
+          setState(() => _livenessStage = _LivenessStage.searchingFace);
+        }
+        return;
+      }
+
+      final face = faces.first;
+      final leftOpen = face.leftEyeOpenProbability;
+      final rightOpen = face.rightEyeOpenProbability;
+      if (leftOpen == null || rightOpen == null) return;
+
+      const openThreshold = 0.65;
+      const closedThreshold = 0.30;
+
+      if (_livenessStage == _LivenessStage.searchingFace) {
+        if (leftOpen > openThreshold && rightOpen > openThreshold) {
+          setState(() => _livenessStage = _LivenessStage.waitingBlink);
+        }
+      } else if (_livenessStage == _LivenessStage.waitingBlink) {
+        if (leftOpen < closedThreshold && rightOpen < closedThreshold) {
+          setState(() => _livenessStage = _LivenessStage.eyesClosed);
+        }
+      } else if (_livenessStage == _LivenessStage.eyesClosed) {
+        if (leftOpen > openThreshold && rightOpen > openThreshold) {
+          setState(() => _livenessStage = _LivenessStage.blinkVerified);
+        }
+      }
+    } catch (_) {
+      // Abaikan frame yang gagal diproses sementara stream berjalan.
+    } finally {
+      _isProcessingFrame = false;
+    }
+  }
+
+  InputImage? _toInputImage(CameraImage image) {
+    if (_cameras.isEmpty) return null;
+    final camera = _cameras[_selectedCameraIndex];
+    final rotation = InputImageRotationValue.fromRawValue(
+      camera.sensorOrientation,
+    );
+    if (rotation == null) return null;
+
+    final rawFormat = image.format.raw;
+    if (rawFormat is! int) return null;
+    final format = InputImageFormatValue.fromRawValue(rawFormat);
+    if (format == null) return null;
+    if (Platform.isAndroid && format != InputImageFormat.nv21) return null;
+    if (Platform.isIOS && format != InputImageFormat.bgra8888) return null;
+
+    if (image.planes.isEmpty) return null;
+    final WriteBuffer allBytes = WriteBuffer();
+    for (final plane in image.planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    final bytes = allBytes.done().buffer.asUint8List();
+
+    return InputImage.fromBytes(
+      bytes: bytes,
+      metadata: InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: rotation,
+        format: format,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+  }
+
   Future<void> _switchCamera() async {
     if (_cameras.length < 2 || _isCameraInitializing) return;
     setState(() => _isCameraInitializing = true);
     _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
     await _startCameraController(_cameras[_selectedCameraIndex]);
+  }
+
+  void _resetLiveness() {
+    if (!mounted) return;
+    setState(() => _livenessStage = _LivenessStage.searchingFace);
+    _startLivenessStream();
   }
 
   Future<void> _captureAndProcess(_FaceMode mode) async {
@@ -121,8 +249,18 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
       context.showSnackBar('Kamera belum siap.', isError: true);
       return;
     }
+    if (_livenessStage != _LivenessStage.blinkVerified) {
+      context.showSnackBar(
+        'Silakan kedipkan mata terlebih dahulu sebelum memproses wajah.',
+        isError: true,
+      );
+      return;
+    }
 
     try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
       final photo = await controller.takePicture();
       final notifier = ref.read(faceRecognitionControllerProvider.notifier);
 
@@ -131,6 +269,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
         if (!mounted) return;
         setState(() => _selectedMode = _FaceMode.verify);
         context.showSnackBar(message);
+        _resetLiveness();
       } else {
         final outcome = await notifier.verifyFromImagePath(photo.path);
         if (!mounted) return;
@@ -142,10 +281,12 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
           outcome.result.message,
           isError: !outcome.result.matched,
         );
+        _resetLiveness();
       }
     } catch (error) {
       if (!mounted) return;
       context.showSnackBar(describeError(error), isError: true);
+      _resetLiveness();
     }
   }
 
@@ -170,8 +311,10 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
           IconButton(
             tooltip: 'Muat ulang',
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                ref.read(faceRecognitionControllerProvider.notifier).refresh(),
+            onPressed: () {
+              ref.read(faceRecognitionControllerProvider.notifier).refresh();
+              _resetLiveness();
+            },
           ),
         ],
       ),
@@ -185,6 +328,8 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
               : (!viewState.canRegister
                     ? _FaceMode.verify
                     : (_selectedMode ?? _FaceMode.verify));
+          final isBlinkVerified =
+              _livenessStage == _LivenessStage.blinkVerified;
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -211,6 +356,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                   selected: {mode},
                   onSelectionChanged: (selection) {
                     setState(() => _selectedMode = selection.first);
+                    _resetLiveness();
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -220,6 +366,7 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                 isInitializing: _isCameraInitializing,
                 error: _cameraError,
                 isProcessing: viewState.isProcessing,
+                livenessStage: _livenessStage,
                 onRetryCamera: _initCamera,
               ),
               const SizedBox(height: AppSpacing.md),
@@ -232,7 +379,8 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                 onPressed:
                     (_isCameraInitializing ||
                         _cameraError != null ||
-                        viewState.isProcessing)
+                        viewState.isProcessing ||
+                        !isBlinkVerified)
                     ? null
                     : () => _captureAndProcess(mode),
                 icon: viewState.isProcessing
@@ -249,6 +397,8 @@ class _FaceRecognitionPageState extends ConsumerState<FaceRecognitionPage> {
                 label: Text(
                   viewState.isProcessing
                       ? 'Memproses wajah...'
+                      : !isBlinkVerified
+                      ? 'Kedipkan Mata Terlebih Dahulu'
                       : mode == _FaceMode.register
                       ? (viewState.isRegistered
                             ? 'Perbarui Registrasi Wajah'
@@ -304,7 +454,7 @@ class _FaceStatusBanner extends StatelessWidget {
     } else {
       title = 'Wajah Sudah Terdaftar';
       subtitle = attendanceVerifyMode
-          ? 'Posisikan wajah di kamera untuk verifikasi sebelum clock in/out.'
+          ? 'Posisikan wajah di bingkai oval dan kedipkan mata untuk verifikasi absensi.'
           : 'Registrasi terkunci (1x). Hubungi admin jika perlu izin registrasi ulang.';
     }
 
@@ -361,6 +511,7 @@ class _CameraPreviewCard extends StatelessWidget {
     required this.isInitializing,
     required this.error,
     required this.isProcessing,
+    required this.livenessStage,
     required this.onRetryCamera,
   });
 
@@ -368,6 +519,7 @@ class _CameraPreviewCard extends StatelessWidget {
   final bool isInitializing;
   final String? error;
   final bool isProcessing;
+  final _LivenessStage livenessStage;
   final VoidCallback onRetryCamera;
 
   @override
@@ -416,6 +568,25 @@ class _CameraPreviewCard extends StatelessWidget {
               );
             }
 
+            final (hintText, badgeColor) = switch (livenessStage) {
+              _LivenessStage.searchingFace => (
+                'Posisikan wajah di dalam bingkai oval',
+                Colors.black.withValues(alpha: 0.65),
+              ),
+              _LivenessStage.waitingBlink => (
+                'Wajah terdeteksi — Kedipkan mata Anda sekarang',
+                Colors.orange.shade800.withValues(alpha: 0.85),
+              ),
+              _LivenessStage.eyesClosed => (
+                'Mata tertutup — Buka mata kembali',
+                Colors.orange.shade800.withValues(alpha: 0.85),
+              ),
+              _LivenessStage.blinkVerified => (
+                'Kedipan terdeteksi ✓ Silakan lanjutkan',
+                Colors.green.shade700.withValues(alpha: 0.9),
+              ),
+            };
+
             return Stack(
               fit: StackFit.expand,
               children: [
@@ -427,18 +598,18 @@ class _CameraPreviewCard extends StatelessWidget {
                     child: CameraPreview(controller!),
                   ),
                 ),
-                Center(
-                  child: Container(
-                    width: 210,
-                    height: 260,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(140),
-                      border: Border.all(
-                        color: isProcessing
-                            ? colors.primary
-                            : Colors.white.withValues(alpha: 0.85),
-                        width: 2.5,
-                      ),
+                // Area di luar bingkai oval wajah berwarna hijau semi-transparan.
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _FaceOvalOverlayPainter(
+                      ovalWidth: 210,
+                      ovalHeight: 260,
+                      outsideColor: Colors.green.withValues(alpha: 0.45),
+                      borderColor: isProcessing
+                          ? colors.primary
+                          : livenessStage == _LivenessStage.blinkVerified
+                          ? Colors.lightGreenAccent
+                          : Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
@@ -449,16 +620,20 @@ class _CameraPreviewCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.sm,
-                      vertical: 6,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.55),
+                      color: badgeColor,
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
-                    child: const Text(
-                      'Posisikan wajah di dalam bingkai oval dengan pencahayaan cukup',
+                    child: Text(
+                      hintText,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -469,6 +644,52 @@ class _CameraPreviewCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Painter untuk memberi warna hijau di luar bingkai oval wajah.
+class _FaceOvalOverlayPainter extends CustomPainter {
+  const _FaceOvalOverlayPainter({
+    required this.ovalWidth,
+    required this.ovalHeight,
+    required this.outsideColor,
+    required this.borderColor,
+  });
+
+  final double ovalWidth;
+  final double ovalHeight;
+  final Color outsideColor;
+  final Color borderColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ovalRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: ovalWidth,
+      height: ovalHeight,
+    );
+
+    final overlayPath = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addOval(ovalRect);
+
+    canvas.drawPath(overlayPath, Paint()..color = outsideColor);
+
+    canvas.drawOval(
+      ovalRect,
+      Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FaceOvalOverlayPainter oldDelegate) =>
+      oldDelegate.borderColor != borderColor ||
+      oldDelegate.outsideColor != outsideColor ||
+      oldDelegate.ovalWidth != ovalWidth ||
+      oldDelegate.ovalHeight != ovalHeight;
 }
 
 class _VerifyResultCard extends StatelessWidget {
