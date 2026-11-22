@@ -5,12 +5,16 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:flutter_antigravity_starter_pack/app/router/app_routes.dart';
+import 'package:flutter_antigravity_starter_pack/features/attendance/data/attendance_repository.dart';
+import 'package:flutter_antigravity_starter_pack/features/attendance/data/models/attendance.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 import 'package:flutter_antigravity_starter_pack/features/home/presentation/home_page.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
+
+class _MockAttendanceRepository extends Mock implements AttendanceRepository {}
 
 void main() {
   const sampleUser = AuthUser(
@@ -19,9 +23,23 @@ void main() {
     email: 'emily@example.com',
   );
 
-  Future<void> pumpHomePage(WidgetTester tester, {AuthUser? user}) async {
+  const defaultOverview = AttendanceOverview(
+    today: '2026-11-22',
+    officeLocation: OfficeLocation(),
+    recap: AttendanceRecap(),
+  );
+
+  Future<void> pumpHomePage(
+    WidgetTester tester, {
+    AuthUser? user,
+    AttendanceOverview overview = defaultOverview,
+  }) async {
     final repository = _MockAuthRepository();
+    final attendanceRepository = _MockAttendanceRepository();
     when(() => repository.restoreSession()).thenAnswer((_) async => user);
+    when(
+      () => attendanceRepository.getTodayOverview(),
+    ).thenAnswer((_) async => overview);
 
     final router = GoRouter(
       initialLocation: AppRoutes.home,
@@ -38,6 +56,7 @@ void main() {
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(repository),
+          attendanceRepositoryProvider.overrideWithValue(attendanceRepository),
           splashDelayProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -74,4 +93,30 @@ void main() {
       expect(find.text('Halaman Absensi'), findsOneWidget);
     },
   );
+
+  testWidgets('menampilkan jam masuk dan pulang dari API', (tester) async {
+    final clockIn = DateTime(2026, 11, 22, 8, 15).toIso8601String();
+    final clockOut = DateTime(2026, 11, 22, 17, 5).toIso8601String();
+
+    await pumpHomePage(
+      tester,
+      user: sampleUser,
+      overview: AttendanceOverview(
+        today: '2026-11-22',
+        attendance: Attendance(
+          id: 1,
+          date: '2026-11-22',
+          clockInAt: clockIn,
+          clockOutAt: clockOut,
+          status: 'present',
+        ),
+        officeLocation: const OfficeLocation(),
+        recap: const AttendanceRecap(),
+      ),
+    );
+
+    expect(find.text('Selesai'), findsOneWidget);
+    expect(find.text('08:15'), findsOneWidget);
+    expect(find.text('17:05'), findsOneWidget);
+  });
 }

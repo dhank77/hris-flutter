@@ -210,6 +210,7 @@ class AttendanceController extends AsyncNotifier<AttendanceViewState> {
           isSubmitting: false,
         ),
       );
+      ref.invalidate(todayAttendanceOverviewProvider);
 
       return result.message;
     } catch (error) {
@@ -245,3 +246,9 @@ final attendanceControllerProvider =
       AttendanceController,
       AttendanceViewState
     >(AttendanceController.new);
+
+/// Ringkasan absensi hari ini dari API (tanpa memicu pembacaan GPS).
+final todayAttendanceOverviewProvider =
+    FutureProvider.autoDispose<AttendanceOverview>(
+      (ref) => ref.watch(attendanceRepositoryProvider).getTodayOverview(),
+    );

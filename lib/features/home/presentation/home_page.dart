@@ -6,6 +6,8 @@ import 'package:flutter_antigravity_starter_pack/app/router/app_routes.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/app_bottom_nav_bar.dart';
+import 'package:flutter_antigravity_starter_pack/features/attendance/application/attendance_controller.dart';
+import 'package:flutter_antigravity_starter_pack/features/attendance/data/models/attendance.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
 
@@ -16,30 +18,34 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authControllerProvider).asData?.value;
+    final overview = ref.watch(todayAttendanceOverviewProvider).asData?.value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Beranda')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.md,
-          AppSpacing.lg,
-        ),
-        children: [
-          _WelcomeBanner(user: user),
-          const SizedBox(height: AppSpacing.md),
-          const _AttendanceSummaryCard(),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Menu Cepat',
-            style: context.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+      body: RefreshIndicator(
+        onRefresh: () => ref.refresh(todayAttendanceOverviewProvider.future),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.lg,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          const _QuickMenuGrid(),
-        ],
+          children: [
+            _WelcomeBanner(user: user),
+            const SizedBox(height: AppSpacing.md),
+            _AttendanceSummaryCard(attendance: overview?.attendance),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Menu Cepat',
+              style: context.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const _QuickMenuGrid(),
+          ],
+        ),
       ),
       bottomNavigationBar: AppBottomNavBar(
         currentTab: AppBottomNavTab.home,
@@ -126,11 +132,37 @@ class _WelcomeBanner extends StatelessWidget {
 }
 
 class _AttendanceSummaryCard extends StatelessWidget {
-  const _AttendanceSummaryCard();
+  const _AttendanceSummaryCard({required this.attendance});
+
+  final Attendance? attendance;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final hasClockIn = attendance?.clockInAt != null;
+    final hasClockOut = attendance?.clockOutAt != null;
+
+    final String statusLabel;
+    final Color badgeBg;
+    final Color badgeFg;
+
+    if (hasClockOut) {
+      statusLabel = 'Selesai';
+      badgeBg = colors.primaryContainer;
+      badgeFg = colors.onPrimaryContainer;
+    } else if (hasClockIn) {
+      statusLabel = attendance?.status == 'late' ? 'Terlambat' : 'Sudah Absen';
+      badgeBg = attendance?.status == 'late'
+          ? colors.errorContainer
+          : colors.primaryContainer;
+      badgeFg = attendance?.status == 'late'
+          ? colors.onErrorContainer
+          : colors.onPrimaryContainer;
+    } else {
+      statusLabel = 'Belum Absen';
+      badgeBg = colors.secondaryContainer;
+      badgeFg = colors.onSecondaryContainer;
+    }
 
     return Card(
       child: Padding(
@@ -153,13 +185,13 @@ class _AttendanceSummaryCard extends StatelessWidget {
                     vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.secondaryContainer,
+                    color: badgeBg,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
-                    'Belum Absen',
+                    statusLabel,
                     style: context.textTheme.labelSmall?.copyWith(
-                      color: colors.onSecondaryContainer,
+                      color: badgeFg,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -167,21 +199,21 @@ class _AttendanceSummaryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            const Row(
+            Row(
               children: [
                 Expanded(
                   child: _TimeInfoTile(
                     icon: Icons.login_rounded,
                     label: 'Jam Masuk',
-                    value: '--:--',
+                    value: _formatAttendanceTime(attendance?.clockInAt),
                   ),
                 ),
-                SizedBox(width: AppSpacing.md),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _TimeInfoTile(
                     icon: Icons.logout_rounded,
                     label: 'Jam Pulang',
-                    value: '--:--',
+                    value: _formatAttendanceTime(attendance?.clockOutAt),
                   ),
                 ),
               ],
@@ -191,6 +223,15 @@ class _AttendanceSummaryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatAttendanceTime(String? isoString) {
+  if (isoString == null || isoString.isEmpty) return '--:--';
+  final parsed = DateTime.tryParse(isoString)?.toLocal();
+  if (parsed == null) return '--:--';
+  final hh = parsed.hour.toString().padLeft(2, '0');
+  final mm = parsed.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
 }
 
 class _TimeInfoTile extends StatelessWidget {
