@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/application/leave_requests_controller.dart';
+import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/attachment_picker.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/leave_requests_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/models/leave_request.dart';
 
@@ -143,4 +146,67 @@ void main() {
       expect(full.rejectionReason, 'Jadwal padat');
     },
   );
+
+  test('submit meneruskan lampiran file ke repository', () async {
+    final attachment = PickedAttachment(
+      name: 'surat-dokter.pdf',
+      sizeBytes: 2048,
+      bytes: Uint8List.fromList([1, 2, 3, 4]),
+    );
+    const created = LeaveRequest(
+      id: 3,
+      type: 'sick',
+      startDate: '2026-12-15',
+      endDate: '2026-12-16',
+      days: 2,
+      reason: 'Rawat jalan',
+      attachmentUrl: 'https://example.com/storage/leave-attachments/doc.pdf',
+      status: 'pending',
+    );
+
+    when(
+      () => repository.fetchAll(status: any(named: 'status')),
+    ).thenAnswer((_) async => const LeaveRequestListResult());
+    await load();
+
+    when(
+      () => repository.submit(
+        type: 'sick',
+        startDate: '2026-12-15',
+        endDate: '2026-12-16',
+        reason: 'Rawat jalan',
+        attachment: attachment,
+      ),
+    ).thenAnswer(
+      (_) async => const LeaveRequestSubmitResult(
+        message: 'Pengajuan cuti berhasil dikirim ke admin.',
+        leaveRequest: created,
+      ),
+    );
+    when(() => repository.fetchAll(status: any(named: 'status'))).thenAnswer(
+      (_) async => const LeaveRequestListResult(
+        leaveRequests: [created],
+        summary: LeaveRequestSummary(pending: 1, total: 1),
+      ),
+    );
+
+    final message = await container
+        .read(leaveRequestsControllerProvider.notifier)
+        .submit(
+          type: 'sick',
+          startDate: '2026-12-15',
+          endDate: '2026-12-16',
+          reason: 'Rawat jalan',
+          attachment: attachment,
+        );
+
+    expect(message, 'Pengajuan cuti berhasil dikirim ke admin.');
+    expect(attachment.isPdf, isTrue);
+    expect(attachment.isWithinSizeLimit, isTrue);
+    expect(attachment.formattedSize, '2 KB');
+    final updated = container
+        .read(leaveRequestsControllerProvider)
+        .requireValue;
+    expect(updated.items.single.attachmentUrl, isNotNull);
+  });
 }

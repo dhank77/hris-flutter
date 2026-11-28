@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/attachment_picker.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/leave_requests_api.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/models/leave_request.dart';
 
@@ -17,11 +18,13 @@ class LeaveRequestsRepository {
     required String startDate,
     required String endDate,
     required String reason,
+    PickedAttachment? attachment,
   }) => _api.submit(
     type: type,
     startDate: startDate,
     endDate: endDate,
     reason: reason,
+    attachment: attachment,
   );
 
   Future<String> cancel(int id) => _api.cancel(id);

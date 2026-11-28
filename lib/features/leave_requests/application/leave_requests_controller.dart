@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/attachment_picker.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/leave_requests_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/models/leave_request.dart';
 
@@ -108,6 +109,7 @@ class LeaveRequestsController extends AsyncNotifier<LeaveRequestsViewState> {
     required String startDate,
     required String endDate,
     required String reason,
+    PickedAttachment? attachment,
   }) async {
     final current = state.asData?.value;
     if (current != null) {
@@ -121,6 +123,7 @@ class LeaveRequestsController extends AsyncNotifier<LeaveRequestsViewState> {
         startDate: startDate,
         endDate: endDate,
         reason: reason,
+        attachment: attachment,
       );
 
       final filterStatus = current?.selectedStatus;

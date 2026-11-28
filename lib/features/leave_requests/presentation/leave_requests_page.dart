@@ -7,6 +7,7 @@ import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensi
 import 'package:flutter_antigravity_starter_pack/core/widgets/async_value_view.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/state_views.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/application/leave_requests_controller.dart';
+import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/attachment_picker.dart';
 import 'package:flutter_antigravity_starter_pack/features/leave_requests/data/models/leave_request.dart';
 
 /// Halaman daftar dan pengajuan Cuti & Izin yang dikirim ke admin via API.
@@ -322,6 +323,23 @@ class _LeaveRequestCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(item.reason, style: context.textTheme.bodyMedium),
+            if (item.attachmentUrl != null &&
+                item.attachmentUrl!.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Icon(Icons.attach_file, size: 15, color: colors.primary),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Lampiran terlampir',
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (item.approverName != null && item.approverName!.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -391,6 +409,7 @@ class _LeaveRequestFormSheetState
   String _type = 'leave';
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
+  PickedAttachment? _attachment;
   bool _submitting = false;
   String? _errorText;
 
@@ -441,6 +460,27 @@ class _LeaveRequestFormSheetState
     setState(() => _endDate = picked);
   }
 
+  Future<void> _pickAttachment() async {
+    try {
+      final picked = await ref.read(attachmentPickerProvider).pickAttachment();
+      if (picked == null || !mounted) return;
+      if (!picked.isWithinSizeLimit) {
+        setState(() {
+          _errorText = 'Ukuran file melebihi batas maksimum 4 MB.';
+        });
+        return;
+      }
+      setState(() {
+        _attachment = picked;
+        _errorText = null;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() => _errorText = describeError(error));
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -457,6 +497,7 @@ class _LeaveRequestFormSheetState
             startDate: _toApiDate(_startDate),
             endDate: _toApiDate(_endDate),
             reason: _reasonController.text,
+            attachment: _attachment,
           );
       if (mounted) {
         Navigator.of(context).pop(message);
@@ -566,6 +607,67 @@ class _LeaveRequestFormSheetState
                   return null;
                 },
               ),
+              const SizedBox(height: AppSpacing.md),
+              Text('Lampiran (Opsional)', style: context.textTheme.labelLarge),
+              const SizedBox(height: AppSpacing.sm),
+              if (_attachment == null)
+                OutlinedButton.icon(
+                  onPressed: _submitting ? null : _pickAttachment,
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: const Text('Pilih File (JPG, PNG, PDF · maks 4 MB)'),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.6,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _attachment!.isPdf
+                            ? Icons.picture_as_pdf_outlined
+                            : Icons.image_outlined,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _attachment!.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              _attachment!.formattedSize,
+                              style: context.textTheme.labelSmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Hapus lampiran',
+                        onPressed: _submitting
+                            ? null
+                            : () => setState(() => _attachment = null),
+                        icon: const Icon(Icons.close, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
               if (_errorText != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
