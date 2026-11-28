@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_logo.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/application/login_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -65,10 +66,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.lock_person_outlined,
-                      size: 56,
-                      color: context.colors.primary,
+                    const Center(
+                      child: AppLogo(size: 72, borderRadius: AppRadius.lg),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(

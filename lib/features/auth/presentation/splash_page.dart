@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_logo.dart';
 
 /// Halaman pembuka (splash screen) yang ditampilkan selama status sesi
 /// autentikasi sedang diperiksa dari penyimpanan lokal / server.
@@ -20,19 +21,7 @@ class SplashPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: colors.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                  ),
-                  child: Icon(
-                    Icons.badge_outlined,
-                    size: 48,
-                    color: colors.primary,
-                  ),
-                ),
+                const AppLogo(size: 88, borderRadius: AppRadius.lg),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'HRIS',
