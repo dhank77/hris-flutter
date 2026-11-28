@@ -49,6 +49,10 @@ void main() {
           path: AppRoutes.attendance,
           builder: (_, _) => const Scaffold(body: Text('Halaman Absensi')),
         ),
+        GoRoute(
+          path: AppRoutes.profile,
+          builder: (_, _) => const Scaffold(body: Text('Halaman Profil')),
+        ),
       ],
     );
 
@@ -118,5 +122,14 @@ void main() {
     expect(find.text('Selesai'), findsOneWidget);
     expect(find.text('08:15'), findsOneWidget);
     expect(find.text('17:05'), findsOneWidget);
+  });
+
+  testWidgets('mengetuk banner profil membuka halaman profil', (tester) async {
+    await pumpHomePage(tester, user: sampleUser);
+
+    await tester.tap(find.byKey(const Key('home.profileBanner')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halaman Profil'), findsOneWidget);
   });
 }

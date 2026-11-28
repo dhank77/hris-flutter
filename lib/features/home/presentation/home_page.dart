@@ -72,60 +72,69 @@ class _WelcomeBanner extends StatelessWidget {
         ? displayName.characters.first.toUpperCase()
         : 'K';
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: colors.primaryContainer,
+    return Material(
+      color: colors.primaryContainer,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        key: const Key('home.profileBanner'),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: colors.primary,
-            foregroundColor: colors.onPrimary,
-            child: Text(
-              initial,
-              style: context.textTheme.titleLarge?.copyWith(
-                color: colors.onPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Selamat datang,',
-                  style: context.textTheme.bodyMedium?.copyWith(
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        onTap: () => context.push(AppRoutes.profile),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: colors.primary,
+                foregroundColor: colors.onPrimary,
+                child: Text(
+                  initial,
                   style: context.textTheme.titleLarge?.copyWith(
-                    color: colors.onPrimaryContainer,
+                    color: colors.onPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: colors.onPrimaryContainer.withValues(alpha: 0.8),
-                  ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selamat datang,',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: colors.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textTheme.titleLarge?.copyWith(
+                        color: colors.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: colors.onPrimaryContainer.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onPrimaryContainer,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

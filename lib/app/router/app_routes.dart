@@ -11,5 +11,7 @@ abstract final class AppRoutes {
 
   static const faceRecognition = '/face-recognition';
 
+  static const profile = '/profile';
+
   // <generator:paths> — scripts/new_feature.sh menambahkan path di atas baris ini.
 }

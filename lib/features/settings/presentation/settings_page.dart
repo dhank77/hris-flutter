@@ -25,11 +25,14 @@ class SettingsPage extends ConsumerWidget {
         children: [
           if (user != null) ...[
             ListTile(
+              key: const Key('settings.profile'),
               leading: CircleAvatar(
                 child: Text(user.fullName.characters.first.toUpperCase()),
               ),
               title: Text(user.fullName),
               subtitle: Text(user.email),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoutes.profile),
             ),
             const Divider(height: AppSpacing.md),
           ],
