@@ -19,6 +19,8 @@ import 'package:flutter_antigravity_starter_pack/features/face_recognition/prese
 
 import 'package:flutter_antigravity_starter_pack/features/profile/presentation/profile_page.dart';
 
+import 'package:flutter_antigravity_starter_pack/features/leave_requests/presentation/leave_requests_page.dart';
+
 // <generator:imports> — scripts/new_feature.sh menambahkan import di atas baris ini.
 
 /// GoRouter dibuat SEKALI untuk seluruh umur aplikasi.
@@ -72,6 +74,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.profile,
         builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.leaveRequests,
+        builder: (context, state) => const LeaveRequestsPage(),
       ),
       // <generator:routes> — scripts/new_feature.sh menambahkan route di atas baris ini.
     ],

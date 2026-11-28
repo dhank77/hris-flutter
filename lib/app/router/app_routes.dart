@@ -13,5 +13,7 @@ abstract final class AppRoutes {
 
   static const profile = '/profile';
 
+  static const leaveRequests = '/leave-requests';
+
   // <generator:paths> — scripts/new_feature.sh menambahkan path di atas baris ini.
 }

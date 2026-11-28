@@ -434,7 +434,7 @@ class _QuickMenuGrid extends StatelessWidget {
       'Pengenalan Wajah',
       AppRoutes.faceRecognition,
     ),
-    (Icons.event_available_outlined, 'Cuti & Izin', null),
+    (Icons.event_available_outlined, 'Cuti & Izin', AppRoutes.leaveRequests),
     (Icons.receipt_long_outlined, 'Slip Gaji', null),
     (Icons.history_rounded, 'Riwayat', null),
   ];
