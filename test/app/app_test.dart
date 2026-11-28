@@ -8,6 +8,7 @@ import 'package:flutter_antigravity_starter_pack/app/app.dart';
 import 'package:flutter_antigravity_starter_pack/core/storage/preferences.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/auth_repository.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/data/models/auth_user.dart';
+import 'package:flutter_antigravity_starter_pack/features/settings/presentation/about_info_page.dart';
 
 class _MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -27,11 +28,27 @@ void main() {
     ).thenAnswer((_) async => initialUser);
     when(() => authRepository.logout()).thenAnswer((_) async {});
 
+    var infoWebViewFinished = false;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(preferences),
           authRepositoryProvider.overrideWithValue(authRepository),
+          infoWebViewBuilderProvider.overrideWithValue(({
+            required initialUri,
+            required onProgress,
+            required onPageFinished,
+            required onError,
+            required onReloadReady,
+          }) {
+            if (!infoWebViewFinished) {
+              infoWebViewFinished = true;
+              WidgetsBinding.instance.addPostFrameCallback(
+                (_) => onPageFinished(),
+              );
+            }
+            return Center(child: Text('WebView: $initialUri'));
+          }),
         ],
         child: const App(),
       ),
@@ -96,6 +113,12 @@ void main() {
 
       expect(find.text('Pengaturan'), findsOneWidget);
       expect(find.text('Tema'), findsOneWidget);
+      expect(find.byKey(const Key('settings.aboutInfo')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('settings.logout')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byKey(const Key('settings.logout')), findsOneWidget);
       expect(find.byKey(const Key('home.nav.home')), findsOneWidget);
       expect(find.byKey(const Key('home.absensi')), findsOneWidget);
@@ -128,11 +151,36 @@ void main() {
     await tester.pumpAndSettle();
 
     final logoutFinder = find.byKey(const Key('settings.logout'));
-    await tester.ensureVisible(logoutFinder);
+    await tester.scrollUntilVisible(
+      logoutFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(logoutFinder);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('login.submit')), findsOneWidget);
   });
+
+  testWidgets(
+    'membuka menu Tentang & Informasi dari Pengaturan menampilkan WebView landing page',
+    (tester) async {
+      await pumpApp(tester, initialUser: sampleUser);
+      await tester.tap(find.byKey(const Key('home.settings')));
+      await tester.pumpAndSettle();
+
+      final aboutFinder = find.byKey(const Key('settings.aboutInfo'));
+      await tester.ensureVisible(aboutFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(aboutFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tentang & Informasi'), findsOneWidget);
+      expect(
+        find.text('WebView: https://darkred-mule-141907.hostingersite.com/'),
+        findsOneWidget,
+      );
+    },
+  );
 }

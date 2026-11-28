@@ -4,6 +4,7 @@ abstract final class AppRoutes {
   static const splash = '/splash';
   static const home = '/';
   static const settings = '/settings';
+  static const aboutInfo = '/settings/info';
   static const login = '/login';
 
   static const attendance = '/attendance';

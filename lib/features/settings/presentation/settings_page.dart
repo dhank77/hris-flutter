@@ -73,6 +73,15 @@ class SettingsPage extends ConsumerWidget {
           ),
           const Divider(height: AppSpacing.xl),
           ListTile(
+            key: const Key('settings.aboutInfo'),
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Tentang & Informasi'),
+            subtitle: const Text('Halaman informasi dan profil aplikasi'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRoutes.aboutInfo),
+          ),
+          const Divider(height: AppSpacing.xl),
+          ListTile(
             leading: const Icon(Icons.cloud_outlined),
             title: const Text('API'),
             subtitle: Text(env.apiBaseUrl),

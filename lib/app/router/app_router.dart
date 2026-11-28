@@ -10,6 +10,7 @@ import 'package:flutter_antigravity_starter_pack/features/auth/application/auth_
 import 'package:flutter_antigravity_starter_pack/features/auth/presentation/login_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/auth/presentation/splash_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/home/presentation/home_page.dart';
+import 'package:flutter_antigravity_starter_pack/features/settings/presentation/about_info_page.dart';
 import 'package:flutter_antigravity_starter_pack/features/settings/presentation/settings_page.dart';
 
 import 'package:flutter_antigravity_starter_pack/features/attendance/presentation/attendance_page.dart';
@@ -46,6 +47,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.aboutInfo,
+        builder: (context, state) => const AboutInfoPage(),
       ),
       GoRoute(
         path: AppRoutes.login,
