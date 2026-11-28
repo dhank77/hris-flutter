@@ -9,6 +9,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/async_value_view.dart';
 import 'package:flutter_antigravity_starter_pack/features/face_recognition/application/face_recognition_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/face_recognition/data/models/face_profile.dart';
@@ -498,12 +499,7 @@ class _FaceStatusBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            isRegistered
-                ? Icons.verified_user_rounded
-                : Icons.face_retouching_off_rounded,
-            color: isRegistered ? colors.primary : colors.onSecondaryContainer,
-          ),
+          const AppLottie.biometric(key: Key('face.biometricBanner'), size: 48),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -560,7 +556,24 @@ class _CameraPreviewCard extends StatelessWidget {
         child: Builder(
           builder: (context) {
             if (isInitializing) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppLottie.biometric(
+                      key: Key('face.cameraInitializing'),
+                      size: 120,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Menyiapkan kamera biometrik...',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
             if (error != null ||
                 controller == null ||
@@ -671,6 +684,32 @@ class _CameraPreviewCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (isProcessing)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppLottie.biometric(
+                              key: Key('face.processingOverlay'),
+                              size: 120,
+                            ),
+                            SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'Memverifikasi wajah biometrik...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             );
           },

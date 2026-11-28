@@ -1,15 +1,35 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 
 /// Tampilan standar untuk status loading, error, dan kosong, supaya setiap
 /// layar konsisten dan tidak menulis ulang UI yang sama.
 class LoadingView extends StatelessWidget {
-  const LoadingView({super.key});
+  const LoadingView({this.size = 120, this.message, super.key});
+
+  final double size;
+  final String? message;
 
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: CircularProgressIndicator());
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppLottie.loading(size: size),
+        if (message != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            message!,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 class ErrorView extends StatelessWidget {

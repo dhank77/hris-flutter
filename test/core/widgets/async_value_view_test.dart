@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/async_value_view.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/state_views.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
-  testWidgets('loading menampilkan indikator', (tester) async {
+  testWidgets('loading menampilkan indikator lottie', (tester) async {
     await tester.pumpWidget(
       _wrap(
         AsyncValueView<String>(
@@ -17,7 +19,8 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(LoadingView), findsOneWidget);
+    expect(find.byType(AppLottie), findsOneWidget);
   });
 
   testWidgets('data menampilkan builder', (tester) async {

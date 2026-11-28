@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/state_views.dart';
 
 /// URL landing page informasi aplikasi.
@@ -107,6 +108,15 @@ class _AboutInfoPageState extends ConsumerState<AboutInfoPage> {
                     _reloadCallback = reload;
                   },
                 ),
+                if (isLoading)
+                  const IgnorePointer(
+                    child: Center(
+                      child: AppLottie.loading(
+                        key: Key('aboutInfo.loading'),
+                        size: 100,
+                      ),
+                    ),
+                  ),
                 if (_errorMessage != null)
                   Positioned.fill(
                     child: ColoredBox(

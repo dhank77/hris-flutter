@@ -7,6 +7,7 @@ import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/error/app_exception.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/app_bottom_nav_bar.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/async_value_view.dart';
 import 'package:flutter_antigravity_starter_pack/features/attendance/application/attendance_controller.dart';
 import 'package:flutter_antigravity_starter_pack/features/attendance/data/models/attendance.dart';
@@ -515,6 +516,26 @@ class _AttendanceActionCard extends StatelessWidget {
                   : 'Clock In Sekarang',
             ),
           ),
+          if (viewState.isSubmitting) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const AppLottie.biometric(
+                  key: Key('attendance.biometricSubmitting'),
+                  size: 48,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Mengirim verifikasi absensi biometrik...',
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (!viewState.isWithinRadius && !viewState.isLocating) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(

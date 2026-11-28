@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_antigravity_starter_pack/app/theme/app_tokens.dart';
 import 'package:flutter_antigravity_starter_pack/core/extensions/context_extensions.dart';
 import 'package:flutter_antigravity_starter_pack/core/widgets/app_logo.dart';
+import 'package:flutter_antigravity_starter_pack/core/widgets/app_lottie.dart';
 
 /// Halaman pembuka (splash screen) yang ditampilkan selama status sesi
 /// autentikasi sedang diperiksa dari penyimpanan lokal / server.
@@ -37,15 +38,8 @@ class SplashPage extends StatelessWidget {
                     color: colors.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    key: Key('splash.loading'),
-                    strokeWidth: 2.5,
-                  ),
-                ),
+                const SizedBox(height: AppSpacing.lg),
+                const AppLottie.loading(key: Key('splash.loading'), size: 112),
               ],
             ),
           ),
