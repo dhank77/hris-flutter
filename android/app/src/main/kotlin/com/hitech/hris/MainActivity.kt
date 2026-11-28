@@ -1,4 +1,4 @@
-package com.example.flutter_antigravity_starter_pack
+package com.hitech.hris
 
 import io.flutter.embedding.android.FlutterActivity
 
