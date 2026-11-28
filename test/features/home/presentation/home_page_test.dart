@@ -69,13 +69,38 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('menyambut pengguna yang login di dashboard', (tester) async {
+  testWidgets('menampilkan kartu profil pengguna yang login di dashboard', (
+    tester,
+  ) async {
     await pumpHomePage(tester, user: sampleUser);
 
-    expect(find.text('Selamat datang,'), findsOneWidget);
     expect(find.text('Emily Johnson'), findsOneWidget);
     expect(find.text('emily@example.com'), findsOneWidget);
+    expect(find.byKey(const Key('home.profileAvatar')), findsOneWidget);
+    expect(find.text('EJ'), findsOneWidget);
     expect(find.text('Ringkasan Hari Ini'), findsOneWidget);
+  });
+
+  testWidgets('menampilkan jabatan, departemen, dan foto avatar pengguna', (
+    tester,
+  ) async {
+    const userWithAvatar = AuthUser(
+      id: 2,
+      name: 'Ohan Farhanah',
+      email: 'ohan@example.com',
+      avatar: 'https://example.com/avatars/ohan.png',
+      position: 'HR Manager',
+      department: 'PT Enzym Bioteknologi Internusa',
+    );
+
+    await pumpHomePage(tester, user: userWithAvatar);
+
+    expect(find.text('Ohan Farhanah'), findsOneWidget);
+    expect(
+      find.text('HR Manager\nPT Enzym Bioteknologi Internusa'),
+      findsOneWidget,
+    );
+    expect(find.byType(Image), findsOneWidget);
   });
 
   testWidgets(

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Design token: angka jarak, radius, dan durasi yang dipakai konsisten di
 /// seluruh UI. Ubah di sini, seluruh aplikasi ikut berubah.
 ///
@@ -15,6 +17,14 @@ abstract final class AppRadius {
   static const double sm = 8;
   static const double md = 12;
   static const double lg = 16;
+  static const double xl = 20;
+}
+
+/// Warna aksen dekoratif untuk kartu profil beranda.
+abstract final class AppAccentColors {
+  static const coral = Color(0xFFE04F4F);
+  static const coralSoft = Color(0xFFEC6B6B);
+  static const amber = Color(0xFFFFC107);
 }
 
 abstract final class AppDurations {
